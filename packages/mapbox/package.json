@@ -1,11 +1,12 @@
 {
   "name": "@3d-map/mapbox",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "license": "MIT",
   "type": "module",
   "files": ["dist", "src", "README.md"],
   "sideEffects": false,
   "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "dependencies": { "@3d-map/core": "0.1.0" },
+  "dependencies": { "@3d-map/core": "0.1.1" },
   "peerDependencies": { "mapbox-gl": "^3.30.0" },
   "devDependencies": { "mapbox-gl": "^3.30.0" },
   "scripts": { "build": "tsc -p tsconfig.json", "prepack": "npm run build" }

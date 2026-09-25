@@ -18,3 +18,5 @@ export function distanceMeters(a: Position, b: Position): number {
 export function nearbyCameras(cameras: readonly Camera[], position: Position, previous: ReadonlySet<string> = new Set()): Camera[] {
     return cameras.filter(c => c.enabled && distanceMeters(c, position) <= c.radiusMeters * (previous.has(c.id) ? 1.15 : 1)).sort((a, b) => distanceMeters(a, position) - distanceMeters(b, position));
 }
+
+export { createReconnectController } from './reconnect.js';

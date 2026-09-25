@@ -25,8 +25,8 @@
 @layer base { * { border-color: var(--border); } button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; } }
 body { margin: 0; height: 100dvh; overflow: hidden; background: var(--background); color: var(--foreground); }
 [hidden] { display: none !important; }
-#map { position: absolute; inset: 8px; overflow: hidden; border-radius: 26px; background: var(--secondary); transition: left .25s ease, top .25s ease, border-radius .25s ease; }
-body.panel-open #map { left: 312px; }
+#map { position: absolute; inset: 0; padding: 0; overflow: hidden; border-radius: 0; background: var(--secondary); transition: inset .25s ease, border-radius .25s ease; }
+body.panel-open #map { inset: 8px 8px 8px 312px; border-radius: 26px; }
 .drive-panel { position: absolute; top: 0; left: 0; bottom: 0; width: 312px; padding: 70px 20px 24px; overflow-y: auto; background: var(--background); }
 #toggle-panel { position: absolute; z-index: 3; top: 18px; left: 18px; }
 #close-panel { position: absolute; top: 18px; right: 18px; }

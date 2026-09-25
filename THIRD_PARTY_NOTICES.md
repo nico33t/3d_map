@@ -2,6 +2,8 @@
 
 License sources checked on 2026-09-25. Third-party licenses apply to their
 respective works, not automatically to the rest of this repository.
+Original project code is MIT licensed, Copyright (c) 2026 Nicola Tomassini;
+see LICENSE. That license does not replace the third-party terms below.
 
 ## Audi A1 Quattro (A1II)
 

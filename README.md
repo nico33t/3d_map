@@ -2,6 +2,11 @@
 
 Monorepo TypeScript di pacchetti riutilizzabili per mappe web. Mapbox è il primo motore; il codice applicativo dipende da un contratto comune.
 
+Le modifiche alle versioni sono descritte nel [changelog](CHANGELOG.md); lo stato
+delle funzionalità è in [IMPLEMENTS.md](IMPLEMENTS.md).
+La [ricerca di progetti simili](docs/open-source-references.md) documenta fonti,
+licenze e miglioramenti ispirati ad altri progetti.
+
 ## Pacchetti
 
 | Percorso | Pacchetto | Responsabilità |
@@ -70,10 +75,10 @@ npm run build
 npm pack -w @3d-map/core
 npm pack -w @3d-map/mapbox
 # Nella app di destinazione, installare insieme i due .tgz e mapbox-gl:
-npm install /percorso/3d-map-core-0.1.0.tgz /percorso/3d-map-mapbox-0.1.0.tgz mapbox-gl
+npm install /percorso/3d-map-core-0.1.1.tgz /percorso/3d-map-mapbox-0.1.1.tgz mapbox-gl
 ```
 
-Lo scope npm `@3d-map` è provvisorio: prima di pubblicare scegliere uno scope controllato e definire la licenza. I pacchetti non sono stati pubblicati.
+Lo scope npm `@3d-map` è provvisorio: prima di pubblicare scegliere uno scope controllato. I pacchetti non sono stati pubblicati.
 
 ## Google 3D in futuro
 
@@ -83,12 +88,14 @@ Riferimenti: [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/guides/get-star
 
 ## Licenze e modelli
 
+Il codice originale è distribuito con [licenza MIT](LICENSE),
+Copyright © 2026 Nicola Tomassini.
+
 Vedere [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). I modelli Kenney sono CC0;
 l’Audi A1 è CC BY 4.0, con attribuzione e modifiche documentate. Non è “senza
 copyright”. I marchi automobilistici non sono concessi in licenza dalla CC BY e
-non indicano affiliazione o approvazione. Le licenze degli asset non si applicano
-al codice del progetto; la sola visibilità pubblica non concede una licenza
-open source per il codice originale.
+non indicano affiliazione o approvazione. Le licenze degli asset restano separate
+dalla licenza MIT del codice originale.
 
 ## Credenziali e repository
 

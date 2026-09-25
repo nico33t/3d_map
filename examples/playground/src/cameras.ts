@@ -1,4 +1,4 @@
-import { nearbyCameras, type Camera, type Position } from '@3d-map/rtsp';
+import { createReconnectController, nearbyCameras, type Camera, type Position } from '@3d-map/rtsp';
 import type { MapSession } from '@3d-map/core';
 import { styleFleetButton } from './ui-controls';
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -7,8 +7,8 @@ export function mountCameras(map: MapSession, signal: AbortSignal, browse: () =>
     const toggle = el<HTMLInputElement>('camera-enabled'), search = el<HTMLInputElement>('camera-search'), form = el<HTMLFormElement>('camera-form');
     let enabled = false, cameras: Camera[] = [], position: Position | undefined, lastCheck = 0, near = new Set<string>();
     const pinned = new Set<string>(), dismissed = new Set<string>(), players = new Map<string, () => void>();
-    const request = async (path: string, method = 'GET', body?: unknown) => {
-        const response = await fetch('/api/cameras' + path, { method, signal, headers: { 'Content-Type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    const request = async (path: string, method = 'GET', body?: unknown, requestSignal = signal) => {
+        const response = await fetch('/api/cameras' + path, { method, signal: requestSignal, headers: { 'Content-Type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
         const data = await response.json();
         if (!response.ok)
             throw Error(data.error ?? 'Telecamere non disponibili');
@@ -69,18 +69,20 @@ export function mountCameras(map: MapSession, signal: AbortSignal, browse: () =>
         header.append(title, close);
         tile.append(header, video, note);
         dock.append(tile);
-        let disposed = false, hls: import('hls.js').default | undefined, retry: ReturnType<typeof setTimeout> | undefined, lastTime = -1, stalled = 0;
+        let disposed = false, hls: import('hls.js').default | undefined, lastTime = -1, stalled = 0;
         const clearMedia = () => { hls?.destroy(); hls = undefined; video.pause(); video.removeAttribute('src'); video.load(); };
-        const connect = async () => {
+        const reconnect = createReconnectController(async playerSignal => {
             try {
                 clearMedia();
+                lastTime = -1;
+                stalled = 0;
                 note.textContent = 'Connessione…';
-                const stream = await request('/' + camera.id + '/start', 'POST', {});
+                const stream = await request('/' + camera.id + '/start', 'POST', {}, AbortSignal.any([signal, playerSignal]));
                 if (disposed)
                     return;
                 if (!stream.ready) {
                     note.textContent = stream.message || 'In attesa del flusso · nuovo tentativo automatico';
-                    retry = setTimeout(() => void connect(), 4000);
+                    reconnect.retry();
                     return;
                 }
                 if (video.canPlayType('application/vnd.apple.mpegurl'))
@@ -94,10 +96,9 @@ export function mountCameras(map: MapSession, signal: AbortSignal, browse: () =>
                     hls = new Hls();
                     hls.loadSource(stream.url);
                     hls.attachMedia(video);
-                    hls.on(Hls.Events.ERROR, (_event, data) => { if (data.fatal) {
+                    hls.on(Hls.Events.ERROR, (_event, data) => { if (data.fatal && !disposed) {
                         note.textContent = 'Flusso interrotto · riconnessione…';
-                        clearTimeout(retry);
-                        retry = setTimeout(() => void connect(), 5000);
+                        reconnect.retry();
                     } });
                 }
                 void video.play().catch(() => { if (!disposed)
@@ -106,15 +107,14 @@ export function mountCameras(map: MapSession, signal: AbortSignal, browse: () =>
             catch (error) {
                 if (!disposed) {
                     note.textContent = error instanceof Error ? error.message : 'Connessione non disponibile';
-                    retry = setTimeout(() => void connect(), 10000);
+                    reconnect.retry();
                 }
             }
-        };
-        video.onplaying = () => { note.textContent = 'Video in diretta · ritardo di alcuni secondi'; };
+        });
+        video.onplaying = () => { reconnect.healthy(); stalled = 0; note.textContent = 'Video in diretta · ritardo di alcuni secondi'; };
         video.onerror = () => { if (!disposed) {
             note.textContent = 'Flusso interrotto · riconnessione…';
-            clearTimeout(retry);
-            retry = setTimeout(() => void connect(), 5000);
+            reconnect.retry();
         } };
         const health = setInterval(() => { if (video.paused || disposed)
             return; if (video.currentTime === lastTime)
@@ -122,11 +122,10 @@ export function mountCameras(map: MapSession, signal: AbortSignal, browse: () =>
         else
             stalled = 0; lastTime = video.currentTime; if (stalled >= 3) {
             stalled = 0;
-            clearTimeout(retry);
-            void connect();
+            reconnect.retry();
         } }, 5000);
-        players.set(camera.id, () => { disposed = true; clearTimeout(retry); clearInterval(health); video.onerror = null; clearMedia(); tile.remove(); });
-        void connect();
+        players.set(camera.id, () => { disposed = true; reconnect.dispose(); clearInterval(health); video.onerror = null; video.onplaying = null; clearMedia(); tile.remove(); });
+        reconnect.start();
     }
     function sync() {
         if (position) {
