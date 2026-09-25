@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@custom-variant dark (&:is(.dark *));
+@theme inline {
+  --color-background: var(--background);
+  --color-popover: var(--background);
+  --color-popover-foreground: var(--foreground);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--secondary);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--ring);
+  --color-destructive: #dc2626;
+  --radius-md: 0.5rem;
+}
+:root { font-family: Inter, system-ui, sans-serif; --background: #fafafa; --foreground: #171717; --primary: #171717; --primary-foreground: #fafafa; --secondary: #f0f0f0; --accent: #e5e5e5; --muted-foreground: #737373; --border: #dedede; --ring: #a3a3a3; color-scheme: light; }
+:root[data-theme="night"] { --background: #000; --foreground: #fafafa; --primary: #fafafa; --primary-foreground: #171717; --secondary: #141414; --accent: #292929; --muted-foreground: #a3a3a3; --border: #303030; --ring: #737373; color-scheme: dark; }
+@layer base { * { border-color: var(--border); } button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; } }
+body { margin: 0; height: 100dvh; overflow: hidden; background: var(--background); color: var(--foreground); }
+[hidden] { display: none !important; }
+#map { position: absolute; inset: 8px; overflow: hidden; border-radius: 26px; background: var(--secondary); transition: left .25s ease, top .25s ease, border-radius .25s ease; }
+body.panel-open #map { left: 312px; }
+.drive-panel { position: absolute; top: 0; left: 0; bottom: 0; width: 312px; padding: 70px 20px 24px; overflow-y: auto; background: var(--background); }
+#toggle-panel { position: absolute; z-index: 3; top: 18px; left: 18px; }
+#close-panel { position: absolute; top: 18px; right: 18px; }
+h1 { margin: 0 0 20px; font-size: 21px; font-weight: 600; letter-spacing: -.6px; }
+.control-label { display: block; margin: 15px 0 8px; color: var(--muted-foreground); font-size: 11px; }
+.follow { width: 100%; margin-top: 8px; }
+.metrics { display: flex; gap: 32px; margin: 22px 0; }
+.metrics strong { display: block; font-size: 32px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.metrics span { display: block; margin-top: 2px; color: var(--muted-foreground); font-size: 11px; }
+progress { width: 100%; height: 3px; display: block; margin: 20px 0; border: 0; background: var(--secondary); border-radius: 4px; accent-color: var(--primary); }
+progress::-webkit-progress-bar { background: var(--secondary); border-radius: 4px; }
+progress::-webkit-progress-value { background: var(--primary); border-radius: 4px; }
+.controls { display: flex; gap: 8px; }
+.controls button { flex: 1; }
+.simulation-note { color: var(--muted-foreground); margin: 14px 0 0; font-size: 10px; }
+.environment { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.environment button { font-size: 12px; }
+#status { position: absolute; bottom: 50px; left: 330px; z-index: 2; max-width: calc(100% - 350px); padding: 10px 14px; background: var(--background); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; }
+.asset-credit { position: absolute; bottom: 10px; right: 16px; z-index: 2; padding: 3px 7px; font-size: 8px; color: var(--foreground); background: var(--background); border-radius: 4px; }
+.asset-credit a { color: inherit; text-decoration: underline; }
+dialog { width: min(760px, calc(100vw - 32px)); max-height: 85dvh; margin: auto; overflow: auto; color: var(--foreground); background: var(--background); border: 1px solid var(--border); border-radius: 18px; padding: 24px; }
+dialog::backdrop { background: #000a; backdrop-filter: blur(5px); }
+.fleet-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.fleet-heading h2 { margin: 0; font-weight: 600; font-size: 20px; }
+dialog p { color: var(--muted-foreground); font-size: 12px; line-height: 1.6; margin: 12px 0; }
+#fleet-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.fleet-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: var(--secondary); }
+.fleet-card h3 { margin: 0; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.fleet-card p { white-space: pre-line; }
+.fleet-card label { font-size: 11px; color: var(--muted-foreground); }
+@media (max-width: 640px) {
+  body.panel-open #map { left: 8px; top: 45dvh; }
+  .drive-panel { width: 100%; height: 45dvh; bottom: auto; padding: 65px 18px 20px; }
+  .asset-credit { bottom: 28px; }
+  #status { left: 16px; max-width: calc(100% - 32px); }
+}
+@media (prefers-reduced-motion: reduce) { #map { transition: none; } }
+/* Keep the panel toolbar separate from its scrolling content. */
+.drive-panel { top: 64px; padding-top: 12px; }
+#close-panel { display: none; }
+@media (max-width: 640px) { .drive-panel { height: calc(45dvh - 64px); padding-top: 12px; } }
+
+#camera-dialog, #system-dialog { width: min(680px, calc(100vw - 24px)); max-height: 85dvh; overflow: auto; padding: 24px; border: 1px solid var(--border); border-radius: 24px; background: var(--background); color: var(--foreground); }
+#camera-dialog::backdrop, #system-dialog::backdrop { background: #0009; backdrop-filter: blur(5px); }
+#camera-dialog p, #system-dialog p { margin: 12px 0; font-size: 13px; opacity: .75; }
+#camera-dialog input:not([type=checkbox]), #system-dialog input { display: block; width: 100%; padding: 10px; margin: 6px 0 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); }
+.camera-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.camera-row strong { flex: 1; min-width: 120px; }
+#camera-form { display: grid; gap: 6px; padding-top: 16px; }
+#camera-dialog details { margin-top: 20px; }
+#camera-dock { position: fixed; left: 24px; bottom: 50px; z-index: 5; display: flex; gap: 12px; max-width: calc(100vw - 48px); overflow-x: auto; padding: 4px; }
+#camera-dock[hidden] { display: none; }
+.panel-open #camera-dock { left: 332px; max-width: calc(100vw - 356px); }
+.camera-tile { width: 300px; flex: 0 0 300px; overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--background); color: var(--foreground); box-shadow: 0 8px 32px #0005; }
+.camera-tile header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; gap: 8px; }
+.camera-tile video { display: block; width: 100%; aspect-ratio: 16/9; background: #080808; }
+.camera-tile p { font-size: 11px; padding: 6px 12px; }
+.map3d-marker { background: var(--background); color: var(--foreground); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; cursor: pointer; box-shadow: 0 2px 12px #0004; }
+@media (max-width: 640px) { .panel-open #camera-dock, #camera-dock { left: 16px; max-width: calc(100vw - 32px); bottom: 44px; } .camera-tile { width: 240px; flex-basis: 240px; } }
+
+.select-host { display: block; min-width: 0; margin-bottom: 10px; }
+.fleet-card .select-host { margin-top: 8px; }

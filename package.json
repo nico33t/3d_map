@@ -1,0 +1,33 @@
+{
+  "name": "3d-map-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "npm run build -w @3d-map/core && npm run build -w @3d-map/mapbox && npm run build -w @3d-map/google && npm run build -w @3d-map/vehicles-3d && npm run build -w @3d-map/aitrack && npm run build -w @3d-map/rtsp && npm run build -w @3d-map/aitrack-server",
+    "typecheck": "npm run build && tsc -p examples/playground/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "dev": "npm run build && npm run dev -w @3d-map/playground",
+    "build:example": "npm run build && npm run build -w @3d-map/playground",
+    "check": "npm run typecheck && npm test && npm run build:example",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "start": "npm run build:example && node scripts/start-app.mjs",
+    "start:local": "npm run build:example && node scripts/start-app.mjs --no-tunnel",
+    "check:public": "node scripts/check-public.mjs --history"
+  },
+  "devDependencies": {
+    "@types/geojson": "7946.0.16",
+    "@types/node": "26.6.2",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.7",
+    "vitest": "4.1.11"
+  }
+}

@@ -1,0 +1,18 @@
+Audi A1 Quattro (A1II)
+Author: Mona x Supercars / GT Cars: Hyperspeed (@Car2022)
+Author URL: https://sketchfab.com/Car2022
+Source: https://sketchfab.com/3d-models/audi-a1-quattro-a1ii-c0ca74fba3b24326b898bfc556909b57
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+License URL: https://creativecommons.org/licenses/by/4.0/
+Legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+
+Original supplied by the user. Author, source and CC-BY-4.0 license are also
+embedded in the GLB asset.extras metadata.
+
+../../originals/audi-a1-quattro.original.glb: unchanged source file, kept in the workspace.
+audi-a1-quattro.glb: normalized scale and pivot for map placement;
+invisible SketchUp edge overlays and fully transparent helpers removed.
+Visible car geometry and textures have not been simplified or retouched.
+
+Credit the author and link to the source/license when using this model.
+This asset is not CC0. The Kenney assets have a separate CC0 license.

@@ -1,0 +1,19 @@
+{
+  "name": "@3d-map/aitrack-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@3d-map/aitrack": "0.1.0",
+    "@3d-map/rtsp": "0.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}
