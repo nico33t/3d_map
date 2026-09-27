@@ -1,5 +1,7 @@
+import { badgeOptions, vehicleBadges, saveVehicleBadges, colorOptions, vehicleColor, saveVehicleColor, prepareVehicleModel } from './vehicle-paint';
 import { syncSelect } from './ui-selects';
 import { mountCameras } from './cameras';
+import { mountAreas } from './areas';
 import { mountSystem } from './system';
 import { mountShadcnControls, setControlPressed, setControlDisabled } from './ui-controls';
 import { createMap, type Coordinates, type Camera } from '@3d-map/core';
@@ -59,6 +61,10 @@ async function start() {
     });
     map.on('error', (error) => { status.textContent = `Errore della mappa: ${error.message}`; });
     let car: MapboxVehicle | undefined;
+    let modelGeneration = 0, preparingModel = false;
+    let releaseModel = () => {};
+    const clearVehicle = () => { modelGeneration++; preparingModel = false; car?.destroy(); car = undefined; releaseModel(); releaseModel = () => {}; };
+    lifetime.signal.addEventListener('abort', clearVehicle, { once: true });
     let changingBasemap = false;
     let devices: Device[] = [];
     let demoModel = audiA1;
@@ -66,6 +72,9 @@ async function start() {
     let currentHeading = 0;
     let currentTrail: readonly Coordinates[] = [];
     const modelSelect = element<HTMLSelectElement>('vehicle-model');
+    const colorSelect = element<HTMLSelectElement>('vehicle-color');
+    const badgeSelect = element<HTMLSelectElement>('vehicle-badges');
+    const colorOwner = () => mode === 'demo' ? 'demo' : imei;
     const fleetDialog = element<HTMLDialogElement>('fleet-dialog');
     const activeModel = () => mode === 'demo' ? demoModel : fleetModel(imei);
     const updateIdentity = () => {
@@ -73,6 +82,8 @@ async function start() {
       const device = devices.find(device => String(device.imei) === imei);
       element('vehicle-title').textContent = mode === 'demo' ? model.name : device?.name || 'Veicolo Aitrack';
       modelOptions(modelSelect, model.id);
+      colorOptions(colorSelect, colorOwner(), model);
+      badgeOptions(badgeSelect, colorOwner(), model);
       const credit = element('asset-credit');
       const author = document.createElement('a'); author.href = model.sourceUrl; author.target = '_blank'; author.rel = 'noreferrer'; author.textContent = model.id === audiA1.id ? 'Car2022' : model.author;
       const license = document.createElement('a'); license.href = model.licenseUrl; license.target = '_blank'; license.rel = 'noreferrer'; license.textContent = model.license;
@@ -92,15 +103,31 @@ async function start() {
     let liveController: AbortController | undefined;
     let stopPolling: (() => void) | undefined;
     const cameras = mountCameras(map, lifetime.signal, () => { following = false; follow.setAttribute('aria-pressed', 'false'); follow.textContent = 'Segui veicolo'; });
+    mountAreas(map, client, lifetime.signal, () => { following = false; setControlPressed('follow', false); follow.textContent = 'Camera libera'; });
     const render = (position: Coordinates, heading: number, trail: readonly Coordinates[]) => {
       cameras.updatePosition(position);
       currentPosition = position; currentHeading = heading; currentTrail = [...trail];
       const model = activeModel();
-      if (!car) car = createMapboxVehicle(map, {
-        id: `fleet-${++renderId}`, modelUrl: new URL(`/${model.file}`, window.location.origin).href,
-        position, scale: model.mapScale, headingOffset: model.headingOffset,
-      });
-      car.update(position, heading, trail);
+      if (!car && !preparingModel) {
+        preparingModel = true;
+        const generation = modelGeneration;
+        void prepareVehicleModel(model, vehicleColor(colorOwner(), model), vehicleBadges(colorOwner(), model)).then(prepared => {
+          if (generation !== modelGeneration || lifetime.signal.aborted || !currentPosition) { prepared.release(); return; }
+          releaseModel = prepared.release;
+          car = createMapboxVehicle(map, {
+            id: `fleet-${++renderId}`, modelUrl: prepared.url,
+            position: currentPosition, scale: model.mapScale, headingOffset: model.headingOffset,
+          });
+          car.update(currentPosition, currentHeading, currentTrail);
+          preparingModel = false;
+        }).catch(() => {
+          if (generation === modelGeneration && !lifetime.signal.aborted) {
+            releaseModel(); releaseModel = () => {};
+            status.textContent = 'Modello non disponibile. Seleziona nuovamente modello o colore per riprovare.';
+          }
+        });
+      }
+      car?.update(position, heading, trail);
       if (following) map.setCamera({ ...map.getCamera(), center: position });
     };
     const drawDemo = () => {
@@ -166,7 +193,7 @@ async function start() {
     };
     const switchMode = async () => {
       liveController?.abort(); stopPolling?.(); cameras.reset();
-      car?.destroy(); car = undefined; currentPosition = undefined;
+      clearVehicle(); currentPosition = undefined;
       currentTrail = []; currentHeading = 0; liveMotion.reset();
       mode = source.value === 'demo' ? 'demo' : 'live';
       updateIdentity();
@@ -226,11 +253,21 @@ async function start() {
     }, (selected, model) => {
       saveFleetModel(selected, model);
       if (mode === 'live' && selected === imei) replaceModel();
-    });
+    }, selected => { if (mode === 'live' && selected === imei) replaceModel(); });
     const replaceModel = () => {
-      car?.destroy(); car = undefined; updateIdentity();
+      clearVehicle(); updateIdentity();
       if (currentPosition) render(currentPosition, currentHeading, currentTrail);
     };
+    badgeSelect.addEventListener('change', () => {
+      const persisted = saveVehicleBadges(colorOwner(), activeModel(), badgeSelect.value);
+      replaceModel();
+      if (!persisted) status.textContent = 'Loghi applicati solo per questa sessione.';
+    }, { signal: lifetime.signal });
+    colorSelect.addEventListener('change', () => {
+      const persisted = saveVehicleColor(colorOwner(), activeModel(), colorSelect.value);
+      replaceModel();
+      if (!persisted) status.textContent = 'Colore applicato solo per questa sessione: salvataggio non disponibile.';
+    }, { signal: lifetime.signal });
     modelSelect.addEventListener('change', () => {
       if (mode === 'demo') demoModel = getVehicle(modelSelect.value)!;
       else saveFleetModel(imei, modelSelect.value);

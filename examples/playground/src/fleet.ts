@@ -1,3 +1,4 @@
+import { badgeOptions, saveVehicleBadges, colorOptions, saveVehicleColor } from './vehicle-paint';
 import { mountSelect, syncSelect, disposeSelectsWithin } from './ui-selects';
 import { styleFleetButton } from './ui-controls';
 import { audiA1, vehicles, getVehicle, createFleetAssignments } from '@3d-map/vehicles-3d';
@@ -21,7 +22,7 @@ export function saveFleetModel(imei: string, model: string) {
     ? 'Associazioni salvate in questo browser. I modelli Kenney sono rappresentazioni generiche.'
     : 'Salvataggio nel browser non disponibile: associazione valida solo per questa sessione.';
 }
-export function renderFleet(devices: readonly Device[], selected: string, onFollow: (imei: string) => void, onModel: (imei: string, model: string) => void) {
+export function renderFleet(devices: readonly Device[], selected: string, onFollow: (imei: string) => void, onModel: (imei: string, model: string) => void, onColor: (imei: string) => void) {
   const list = document.getElementById('fleet-list')!;
   document.getElementById('fleet-state')!.textContent = `${devices.length} veicoli accessibili con la chiave attuale.`;
   disposeSelectsWithin(list);
@@ -35,10 +36,28 @@ export function renderFleet(devices: readonly Device[], selected: string, onFoll
     const label = document.createElement('label'); label.textContent = 'Rappresentazione 3D';
     const select = document.createElement('select'); select.setAttribute('aria-label', `Modello 3D ${device.name || imei}`);
     modelOptions(select, fleetModel(imei).id);
-    select.addEventListener('change', () => onModel(imei, select.value));
+    select.addEventListener('change', () => { onModel(imei, select.value); colorOptions(colorSelect, imei, fleetModel(imei)); badgeOptions(badgeSelect, imei, fleetModel(imei)); });
+    const colorLabel = document.createElement('label'); colorLabel.textContent = 'Colore carrozzeria';
+    const colorSelect = document.createElement('select'); colorSelect.setAttribute('aria-label', `Colore ${device.name || imei}`);
+    colorOptions(colorSelect, imei, fleetModel(imei));
+    colorSelect.addEventListener('change', () => {
+      const persisted = saveVehicleColor(imei, fleetModel(imei), colorSelect.value);
+      document.getElementById('fleet-save-state')!.textContent = persisted ? 'Colore salvato in questo browser.' : 'Colore valido solo per questa sessione.';
+      onColor(imei);
+    });
+    colorLabel.append(colorSelect);
+    const badgeLabel = document.createElement('label'); badgeLabel.textContent = 'Loghi Audi · davanti e dietro';
+    const badgeSelect = document.createElement('select'); badgeSelect.setAttribute('aria-label', `Loghi Audi ${device.name || imei}`);
+    badgeOptions(badgeSelect, imei, fleetModel(imei));
+    badgeSelect.addEventListener('change', () => {
+      const persisted = saveVehicleBadges(imei, fleetModel(imei), badgeSelect.value);
+      document.getElementById('fleet-save-state')!.textContent = persisted ? 'Scelta loghi salvata in questo browser.' : 'Loghi validi solo per questa sessione.';
+      onColor(imei);
+    });
+    badgeLabel.append(badgeSelect);
     label.append(select);
     const button = document.createElement('button'); styleFleetButton(button); button.textContent = imei === selected ? 'Segui · selezionato' : 'Segui sulla mappa';
     button.addEventListener('click', () => onFollow(imei));
-    card.append(title, detail, label, button); list.append(card); mountSelect(select);
+    card.append(title, detail, label, colorLabel, badgeLabel, button); list.append(card); mountSelect(select); mountSelect(colorSelect); mountSelect(badgeSelect);
   }
 }

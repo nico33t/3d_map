@@ -1,8 +1,10 @@
+export { vehicleColors, resolveVehicleColor, paintVehicleGlb } from './paint.js';
 export { createVehicleMotion, type VehiclePose } from './motion.js';
 export { createFleetAssignments, type FleetStorage } from './fleet.js';
 /** Asset metadata is independent of Mapbox, Google and the rendering library. */
 export { createVehicleRoute, type RoutePoint } from './route.js';
 export interface VehicleAsset {
+  readonly paint?: { readonly materials: readonly string[]; readonly defaultColor: string };
   readonly id: string;
   readonly name: string;
   /** Path relative to the package assets directory. Preserve adjacent textures. */
@@ -40,6 +42,7 @@ export const vehicles: readonly VehicleAsset[] = Object.freeze([
 /** User-supplied realistic asset, with its own CC BY license. */
 export const audiA1: VehicleAsset = Object.freeze({
   mapScale: 1.8, headingOffset: 180,
+  paint: Object.freeze({ materials: Object.freeze(['2021_Audi_A1_S-Line_Python_Yellow']), defaultColor: 'silver' }),
   id: 'audi-a1-quattro', name: 'Audi A1 Quattro (A1II)',
   file: 'audi/audi-a1-quattro.glb', format: 'glb', style: 'realistic',
   author: 'Mona x Supercars / GT Cars: Hyperspeed (@Car2022)',

@@ -29,6 +29,18 @@ Il proxy locale non è un backend di produzione: un sito pubblicato deve avere u
 
 Polling sequenziale ogni 10 secondi (circa 360 richieste/ora per veicolo), con backoff massimo 120 secondi in caso di errore. 403 e dispositivo inesistente fermano il polling. Le posizioni duplicate o più vecchie vengono ignorate. I limiti della chiave sono condivisi con altre app e veicoli: aumentare l'intervallo se necessario.
 
+## Aree (geofence) · API v3 beta
+
+```ts
+import { areaWalls, areaFootprints } from '@3d-map/aitrack';
+import { createMapboxAreaWalls } from '@3d-map/mapbox';
+const areas = await client.listAllAreas();
+const walls = createMapboxAreaWalls(map, { heightM: 8 });
+walls.update(areaWalls(areas), areaFootprints(areas));
+```
+
+Le aree esistono solo in `https://api.aitrack.it/api/v3` e richiedono il permesso `read_areas` sulla chiave. Con `baseUrl` v2 il client usa automaticamente v3 per le aree (`areasBaseUrl` per forzarla). Cerchi e luoghi diventano poligoni a 72 lati, i tracciati un corridoio largo `buffer_m` per lato. `areaWalls` trasforma ogni lato in un segmento sottile pronto da estrudere, con `color` dell’area.
+
 ## Webhook
 
 ```ts

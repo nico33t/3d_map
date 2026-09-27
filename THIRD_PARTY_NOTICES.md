@@ -17,6 +17,10 @@ see LICENSE. That license does not replace the third-party terms below.
   `packages/vehicles-3d/assets/audi/audi-a1-quattro.glb`.
 - Changes to the runtime copy: scale normalized to 4 m length, ground-centered
   pivot, invisible SketchUp helper lines and fully transparent helpers removed.
+  Optional runtime body-material recoloring (default silver) leaves the
+  original GLB, geometry, textures and other materials unchanged.
+  Optional black front/rear rings partition the chrome mesh indices and assign
+  a separate material to the rings at runtime, preserving the other chrome trim.
   Visible surfaces and textures retained. Original metadata and original file
   are preserved. See the adjacent `LICENSE.txt` and the visible playground credit.
 

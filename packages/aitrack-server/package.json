@@ -1,6 +1,6 @@
 {
   "name": "@3d-map/aitrack-server",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -11,8 +11,8 @@
     }
   },
   "dependencies": {
-    "@3d-map/aitrack": "0.1.1",
-    "@3d-map/rtsp": "0.1.1"
+    "@3d-map/aitrack": "0.2.0",
+    "@3d-map/rtsp": "0.2.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"

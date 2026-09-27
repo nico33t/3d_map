@@ -1,4 +1,6 @@
 export { watchAitrackLive } from './live.js';
+export { areaOutline, areaWalls, areaFootprints, type Area, type AreaType, type AreaPoint, type AreaWallProperties } from './areas.js';
+import type { Area, AreaType } from './areas.js';
 export interface Location {
   latitude: number;
   longitude: number;
@@ -48,6 +50,8 @@ export class AitrackError extends Error {
 export interface ClientOptions {
   /** Server: https://api.aitrack.it/api/v2. Browser: own-origin proxy URL. */
   baseUrl?: string;
+  /** Areas exist only in API v3 (beta). Default: baseUrl with /api/v2 replaced by /api/v3. */
+  areasBaseUrl?: string;
   /** Server only. Do not embed API keys in a browser bundle. */
   apiKey?: string;
   fetch?: typeof globalThis.fetch;
@@ -57,6 +61,7 @@ type Query = Record<string, string | number | undefined>;
 
 export function createAitrackClient(options: ClientOptions = {}) {
   const base = (options.baseUrl ?? 'https://api.aitrack.it/api/v2').replace(/\/$/, '');
+  const areasBase = (options.areasBaseUrl ?? base.replace(/\/api\/v2$/, '/api/v3')).replace(/\/$/, '');
   const fetcher = options.fetch ?? globalThis.fetch;
   if (!fetcher) throw new Error('A fetch implementation is required.');
   const timeoutMs = options.timeoutMs ?? 15_000;
@@ -65,7 +70,7 @@ export function createAitrackClient(options: ClientOptions = {}) {
     if (!/^\d{10,20}$/.test(imei)) throw new Error('IMEI must contain 10–20 digits.');
     return `/devices/${imei}`;
   };
-  async function request<T>(path: string, query: Query = {}, signal?: AbortSignal): Promise<ApiResponse<T>> {
+  async function request<T>(path: string, query: Query = {}, signal?: AbortSignal, root = base): Promise<ApiResponse<T>> {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(query)) if (value !== undefined) params.set(key, String(value));
     const controller = new AbortController();
@@ -74,7 +79,7 @@ export function createAitrackClient(options: ClientOptions = {}) {
     signal?.addEventListener('abort', abort, { once: true });
     const timer = setTimeout(() => controller.abort(new Error('Aitrack request timed out.')), timeoutMs);
     try {
-      const response = await fetcher(`${base}${path}${params.size ? `?${params}` : ''}`, {
+      const response = await fetcher(`${root}${path}${params.size ? `?${params}` : ''}`, {
         method: 'GET', headers: { Accept: 'application/json', ...(options.apiKey ? { 'X-API-Key': options.apiKey } : {}) },
         signal: controller.signal, redirect: 'error', cache: 'no-store',
       });
@@ -97,6 +102,23 @@ export function createAitrackClient(options: ClientOptions = {}) {
     getHistory: (imei: string, query: { from: string; to: string; limit?: number }, signal?: AbortSignal) => request<Location[]>(`${devicePath(imei)}/history`, query, signal),
     nearestDevices: (query: { lat: number; lng: number; limit?: number; max_km?: number }, signal?: AbortSignal) => request<(Device & { distance_km: number })[]>('/devices/nearest', query, signal),
     listEvents: (query: { type?: string; device?: string; from?: string; to?: string; limit?: number; offset?: number } = {}, signal?: AbortSignal) => request<FleetEvent[]>('/events', query, signal),
+    /** API v3 (beta), scope read_areas. limit 1–200. */
+    listAreas: (query: { type?: AreaType; limit?: number; offset?: number; external_id?: string } = {}, signal?: AbortSignal) => request<Area[]>('/areas', query, signal, areasBase),
+    getArea: (id: number, signal?: AbortSignal) => {
+      if (!Number.isSafeInteger(id) || id <= 0) throw new Error('Area ID must be a positive integer.');
+      return request<Area>(`/areas/${id}`, {}, signal, areasBase);
+    },
+    /** Reads every page (200 per request, bounded to 5000 areas). */
+    async listAllAreas(signal?: AbortSignal): Promise<Area[]> {
+      const all: Area[] = [];
+      for (let offset = 0; offset < 5000; offset += 200) {
+        const { data } = await request<Area[]>('/areas', { limit: 200, offset }, signal, areasBase);
+        if (!Array.isArray(data)) throw new AitrackError('Invalid Aitrack areas response.', 200, 'INVALID_RESPONSE');
+        all.push(...data);
+        if (data.length < 200) break;
+      }
+      return all;
+    },
     listCommands: (imei: string, query: { status?: string; limit?: number } = {}, signal?: AbortSignal) => request<Command[]>(`${devicePath(imei)}/commands`, query, signal),
     /** Sequential polling: default 360 requests/hour; bounded backoff for failures. */
     watchLocation(imei: string, handlers: { onLocation: (location: Location) => void; onError?: (error: unknown) => void }, config: { intervalMs?: number; signal?: AbortSignal } = {}) {

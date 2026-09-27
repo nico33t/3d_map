@@ -24,7 +24,9 @@ export function createAitrackGateway(options: { apiKey: string; webhookSecret: s
       });
       lifetime.signal.throwIfAborted();
       nextRequest = Date.now() + (options.requestSpacingMs ?? 4500); requests++;
-      const response = await fetcher(`https://api.aitrack.it/api/v2${path}`, { headers: { 'X-API-Key': options.apiKey, Accept: 'application/json' }, redirect: 'error', cache: 'no-store', signal: AbortSignal.any([lifetime.signal, AbortSignal.timeout(12_000)]) });
+      // Areas exist only in API v3 (beta); every other route stays on stable v2.
+      const version = /^\/areas(?:[/?]|$)/.test(path) ? 'v3' : 'v2';
+      const response = await fetcher(`https://api.aitrack.it/api/${version}${path}`, { headers: { 'X-API-Key': options.apiKey, Accept: 'application/json' }, redirect: 'error', cache: 'no-store', signal: AbortSignal.any([lifetime.signal, AbortSignal.timeout(12_000)]) });
       return { status: response.status, body: await response.text() };
     });
     queue = result.catch(() => {}); return result;
@@ -91,7 +93,7 @@ export function createAitrackGateway(options: { apiKey: string; webhookSecret: s
       res.on('close', () => { clearInterval(heartbeat); stop(); streams.delete(res); }); return;
     }
     const path = url.pathname.slice('/api/aitrack'.length);
-    if (!url.pathname.startsWith('/api/aitrack/') || !/^\/(devices(?:\/nearest|\/\d{10,20}(?:\/(?:location|history|commands))?)?|events)$/.test(path)) return json(res, 404, { error: 'Not found' });
+    if (!url.pathname.startsWith('/api/aitrack/') || !/^\/(devices(?:\/nearest|\/\d{10,20}(?:\/(?:location|history|commands))?)?|events|areas(?:\/[1-9]\d{0,15})?)$/.test(path)) return json(res, 404, { error: 'Not found' });
     try { const result = await upstream(`${path}${url.search}`); if (!res.destroyed) { res.writeHead(result.status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(result.body); } }
     catch { if (!res.destroyed) json(res, 502, { error: 'Aitrack non raggiungibile.' }); }
   };

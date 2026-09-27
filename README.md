@@ -75,7 +75,7 @@ npm run build
 npm pack -w @3d-map/core
 npm pack -w @3d-map/mapbox
 # Nella app di destinazione, installare insieme i due .tgz e mapbox-gl:
-npm install /percorso/3d-map-core-0.1.1.tgz /percorso/3d-map-mapbox-0.1.1.tgz mapbox-gl
+npm install /percorso/3d-map-core-0.2.0.tgz /percorso/3d-map-mapbox-0.2.0.tgz mapbox-gl
 ```
 
 Lo scope npm `@3d-map` è provvisorio: prima di pubblicare scegliere uno scope controllato. I pacchetti non sono stati pubblicati.
@@ -85,6 +85,16 @@ Lo scope npm `@3d-map` è provvisorio: prima di pubblicare scegliere uno scope c
 Vedere [il contratto degli adapter](docs/providers.md). Google non è ancora implementato: la predisposizione consiste in un'interfaccia pubblica senza tipi Mapbox e in una factory sostituibile nel punto di inizializzazione.
 
 Riferimenti: [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/guides/get-started/), [Google Maps 3D](https://developers.google.com/maps/documentation/javascript/3d/overview).
+
+## Colore del veicolo
+
+Il pannello e il parco auto permettono di scegliere il colore sui modelli
+compatibili. L’Audi A1 parte argento; puoi scegliere altri colori o
+ripristinare quello originale. La scelta è salvata in questo browser per
+veicolo e modello. Vetri, ruote e dettagli non vengono ricolorati.
+Solo sull’Audi A1 puoi anche scegliere i loghi anteriori e posteriori originali
+(default) oppure neri, indipendentemente dal colore della carrozzeria.
+I modelli Kenney attuali hanno una texture condivisa: il selettore è disabilitato.
 
 ## Licenze e modelli
 

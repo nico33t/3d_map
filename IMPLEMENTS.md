@@ -32,6 +32,12 @@ Non contiene configurazioni personali o dati provenienti dai servizi collegati.
   la nuova direzione; nessuna estrapolazione oltre il dato ricevuto.
 - Scia, pausa, pulizia del percorso e camera al seguito.
 - Scelta del modello per dispositivo con persistenza nel browser.
+- Colore carrozzeria selezionabile sui modelli compatibili, nel pannello e nel
+  parco auto. Audi A1 argento di default; colore originale ripristinabile.
+  Scelta locale per dispositivo/modello, senza modificare vetri e ruote.
+  I modelli Kenney attuali non supportano la colorazione separata.
+- Solo Audi A1: loghi anteriori e posteriori originali oppure neri, con
+  preferenza salvata per veicolo, senza ricolorare le altre finiture cromate.
 - Controlli GPS adattivi e connessione SSE; riconnessione automatica e fallback
   al polling dove SSE non è disponibile.
 - Webhook firmati che anticipano il controllo delle posizioni. Registrazione

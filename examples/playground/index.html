@@ -29,6 +29,10 @@
       <button id="open-fleet" class="follow" type="button">Il mio parco auto</button>
       <label class="control-label" for="vehicle-model">Modello 3D del veicolo</label>
       <select id="vehicle-model"></select>
+      <label class="control-label" for="vehicle-color">Colore carrozzeria</label>
+      <select id="vehicle-color"></select>
+      <label class="control-label" for="vehicle-badges">Loghi Audi · davanti e dietro</label>
+      <select id="vehicle-badges"></select>
       <div class="metrics">
         <div><strong id="speed">0</strong><span>km/h</span></div>
         <div hidden><strong id="distance">0</strong><span id="distance-label">punti nella scia</span></div>
@@ -39,6 +43,11 @@
         <button id="reset" type="button" disabled>Ricomincia</button>
       </div>
       <button id="follow" class="follow" type="button" aria-pressed="true" disabled>Segui veicolo</button>
+      <div class="controls">
+        <button id="toggle-areas" type="button" aria-pressed="true" disabled>Aree 3D</button>
+        <button id="frame-areas" type="button" disabled>Vai alle aree</button>
+      </div>
+      <p class="simulation-note" id="areas-state" role="status">Caricamento aree Aitrack…</p>
       <p class="simulation-note" id="data-time">In attesa della prima posizione…</p>
       <div class="environment" aria-label="Tipo di mappa">
         <button id="standard-map" type="button" aria-pressed="true" disabled>Standard 3D</button>

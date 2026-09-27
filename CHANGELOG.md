@@ -6,7 +6,31 @@ su npm, una release GitHub o il cambio di visibilità della repository.
 
 ## Non rilasciato
 
-Nessuna modifica successiva alla versione 0.1.1.
+### 0.2.0 — in preparazione
+
+- Aree Aitrack (geofence) in 3D: `listAreas`, `getArea` e `listAllAreas` in
+  `@3d-map/aitrack` leggono API v3 (beta, permesso `read_areas`); devices ed
+  eventi restano su v2. Il gateway locale inoltra solo `GET /areas` e
+  `GET /areas/{id}` verso v3.
+- `areaOutline`, `areaWalls` e `areaFootprints`: geometria indipendente dal
+  motore per cerchi, luoghi, poligoni e tracciati con margine (`buffer_m`).
+- `createMapboxAreaWalls` in `@3d-map/mapbox`: muri virtuali semitrasparenti
+  (8 m) nel colore salvato su Aitrack, con pavimento tenue. Nel playground:
+  pulsanti “Aree 3D” (mostra/nascondi) e “Vai alle aree”.
+- Limiti: sola lettura; i buchi dei poligoni non esistono nel modello v3; API
+  v3 in beta, il formato può cambiare.
+
+- Scelta dei loghi anteriori e posteriori dell’Audi A1: originali (default)
+  oppure neri, indipendente dalla carrozzeria e salvata per veicolo.
+  Gli altri dettagli cromati conservano il loro materiale.
+
+- Selettore shadcn del colore carrozzeria nel pannello e nel parco auto.
+- Audi A1 argento predefinito, sette colori e ripristino del colore originale.
+- Scelta salvata nel browser per veicolo e modello; simulazione separata.
+- Colorazione limitata al materiale carrozzeria dell’Audi: vetri, ruote,
+  texture e geometria restano invariati. File GLB originali non modificati.
+- Selettore disabilitato sui modelli senza materiale carrozzeria separato
+  (attualmente i modelli Kenney). Nessun nuovo asset o servizio esterno.
 
 ## 0.1.1 — 2026-09-25
 
