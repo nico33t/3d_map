@@ -16,6 +16,17 @@ Non contiene configurazioni personali o dati provenienti dai servizi collegati.
 | `@3d-map/aitrack-server` | Implementato | Proxy locale, richieste condivise e distanziate, SSE, ricezione webhook e distribuzione dell’app. |
 | `@3d-map/rtsp` | Implementato, opzionale | Metadati, prossimità, configurazione locale e conversione RTSP/HLS con FFmpeg. |
 
+## App 3d.gpsitalia.com
+
+`apps/gpsitalia-3d` (Cloudflare Pages, non pubblicata):
+- accesso con il login condiviso della piattaforma, riservato al ruolo creator;
+- pagina «non disponibile» per gli altri ruoli;
+- proxy di sola lettura verso le API della piattaforma con il token dell'utente;
+- `noindex` su tutte le risposte.
+
+Mancano ancora la mappa live, il timelapse e l'avviso di inattività. Dettagli in
+[apps/gpsitalia-3d/README.md](apps/gpsitalia-3d/README.md).
+
 ## Interfaccia e mappa
 
 - Pannello apribile e richiudibile con adeguamento delle dimensioni della mappa.

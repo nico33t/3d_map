@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "npm run build -w @3d-map/core && npm run build -w @3d-map/mapbox && npm run build -w @3d-map/google && npm run build -w @3d-map/vehicles-3d && npm run build -w @3d-map/aitrack && npm run build -w @3d-map/rtsp && npm run build -w @3d-map/aitrack-server",
-    "typecheck": "npm run build && tsc -p examples/playground/tsconfig.json --noEmit",
+    "typecheck": "npm run build && tsc -p examples/playground/tsconfig.json --noEmit && tsc -p apps/gpsitalia-3d/tsconfig.json --noEmit",
     "test": "vitest run",
     "dev": "npm run build && npm run dev -w @3d-map/playground",
     "build:example": "npm run build && npm run build -w @3d-map/playground",

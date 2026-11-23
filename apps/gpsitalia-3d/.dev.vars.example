@@ -1,0 +1,7 @@
+# Copy to .dev.vars for `npm run dev` (ignored by Git). Never commit real values.
+# PEM public key of the platform tokens (public, but keep it out of the repo).
+JWT_PUBLIC_KEY=
+AUTH_URL=https://auth.gpsitalia.com
+APP_URL=https://app.gpsitalia.com
+ALLOWED_ROLES=creator
+PLATFORM_API_URL=

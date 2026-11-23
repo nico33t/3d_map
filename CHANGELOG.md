@@ -6,6 +6,26 @@ su npm, una release GitHub o il cambio di visibilità della repository.
 
 ## Non rilasciato
 
+### App 3d.gpsitalia.com (`apps/gpsitalia-3d`)
+
+- Nuovo progetto Cloudflare Pages, non pubblicato. Il middleware protegge ogni
+  richiesta con il login condiviso della piattaforma:
+  - token RS256 verificato con la sola chiave pubblica;
+  - token admin e refresh rifiutati;
+  - cookie host-only `map3d_session`, con il cookie condiviso `authToken` come
+    alternativa.
+- Accesso riservato al ruolo creator. Gli altri ruoli ricevono «non disponibile»
+  (403) su pagine e API.
+- Redirect al login condiviso. Al ritorno l'URL viene ripulito dal token e il
+  refresh token scartato. Logout tramite auth.
+- Proxy di sola lettura `/api/platform/*`: elenco chiuso di percorsi (posizioni
+  live, mezzi, posizione e storico del singolo mezzo) e di parametri, token
+  dell'utente, ruolo ricontrollato a ogni chiamata, nessun cookie o redirect
+  dalla piattaforma.
+- `noindex` su tutte le risposte e `robots.txt` con `Disallow: /`.
+- Configurazione solo da variabili d'ambiente (`.dev.vars` ignorato da Git).
+- Limite: la mappa vera e propria (live, timelapse, inattività) non è ancora inclusa.
+
 ### Testi dell'interfaccia
 
 - Testi visibili del playground con il marchio GPS Italia e il termine «mezzo»;
