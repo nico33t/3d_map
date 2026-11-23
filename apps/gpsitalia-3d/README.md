@@ -34,7 +34,9 @@ pubblicazione e il DNS richiedono una decisione esplicita.
   - elenco con ricerca per nome o targa;
   - il mezzo scelto diventa un modello 3D (Kenney CC0) con movimento interpolato verso l'ultimo punto GPS, senza mai superarlo, e camera al seguito;
   - vista Standard 3D o Satellite 3D;
-  - aggiornamento ogni 30 secondi (la piattaforma tiene in cache 30 s), sospeso a scheda nascosta.
+  - aggiornamento dell'elenco ogni 30 s fino a 200 mezzi, poi più diradato (60, 120, 180 s), sospeso a scheda nascosta;
+  - il mezzo scelto si aggiorna ogni 10 s con una lettura leggera della sola posizione.
+- **Rinnovo del token** (dura 1 ora): 3 minuti prima della scadenza la pagina passa da `AUTH_URL` e ripristina mezzo scelto, vista, tipo di mappa, ricerca e timelapse. Auth vieta gli iframe, quindi il passaggio è una navigazione completa: conta un caricamento Mapbox in più all'ora.
 - **Inattività:** dopo 10 minuti senza interazioni compare «Sei ancora qui?» con 60 secondi di conto alla rovescia, poi rimando su `APP_URL`. Tornando su una scheda nascosta oltre la scadenza, il rimando è immediato.
 - **Dati minimi:** il proxy pagina `last-locations` (al massimo 200 righe per richiesta) e lascia passare solo `imei`, `name`, `targa`, posizione, direzione, velocità e orario. Telefono, indirizzo e dati IO non arrivano al browser.
 - `/api/config` consegna il token pubblico Mapbox solo dopo l'accesso: il token non è nel bundle statico.

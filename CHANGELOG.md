@@ -46,6 +46,11 @@ su npm, una release GitHub o il cambio di visibilità della repository.
   - conteggio delle soste di almeno 5 minuti;
   - ritorno alla diretta.
 - Il proxy limita lo storico a 20.000 punti per richiesta.
+- Carico sulla piattaforma con flotte grandi:
+  - l'elenco completo si aggiorna ogni 30 s fino a 200 mezzi, 60 s fino a 1.000, 120 s fino a 3.000, poi 180 s;
+  - il mezzo scelto si aggiorna a parte ogni 10 s con la lettura della posizione singola;
+  - con 2.000 mezzi si passa da 20 a 11 letture al minuto per scheda, di cui solo 5 pesanti.
+- Rinnovo orario del token senza perdere il lavoro: 3 minuti prima della scadenza la pagina passa da auth (che non permette iframe) e al ritorno ripristina mezzo scelto, vista, tipo di mappa, ricerca e timelapse. Il refresh token non viene mai toccato.
 
 ### Testi dell'interfaccia
 

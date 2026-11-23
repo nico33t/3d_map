@@ -82,3 +82,39 @@ export function mergeFleet(state: FleetState, polled: readonly LiveVehicle[]): L
   }
   return [...state.vehicles.values()].map(entry => entry.vehicle);
 }
+
+/**
+ * Full-fleet refresh interval by fleet size. Each refresh costs ceil(n/200)
+ * paged reads on the platform (cached there for 30 s), so big fleets refresh
+ * less often; the selected vehicle is refreshed separately and cheaply.
+ */
+export function fleetIntervalMs(count: number): number {
+  if (count <= 200) return 30_000;
+  if (count <= 1_000) return 60_000;
+  if (count <= 3_000) return 120_000;
+  return 180_000;
+}
+
+/** Selected vehicle: one primary-key row (/vehicles/:imei/location) every 10 s. */
+export const SELECTED_INTERVAL_MS = 10_000;
+
+/** Platform reads per minute for one open tab: the number the founder asked to bound. */
+export function readsPerMinute(count: number, selected: boolean): number {
+  const pages = Math.max(1, Math.ceil(count / 200));
+  return pages * 60_000 / fleetIntervalMs(count) + (selected ? 60_000 / SELECTED_INTERVAL_MS : 0);
+}
+
+/** Single-location row ({latitude, longitude, speed, timestamp}, no heading) applied to a known vehicle. */
+export function applyLocation(vehicle: LiveVehicle, body: unknown, nowMs = Date.now()): LiveVehicle | null {
+  const row = body && typeof body === 'object' && !Array.isArray(body) ? ((body as { data?: unknown }).data ?? body) as Record<string, unknown> : null;
+  if (!row) return null;
+  const [normalized] = normalizeLiveRows([{ imei: vehicle.imei, name: vehicle.name, targa: vehicle.plate, heading: null, ...row }], nowMs);
+  if (!normalized || Date.parse(normalized.recordedAt) <= Date.parse(vehicle.recordedAt)) return null;
+  const moved = normalized.longitude !== vehicle.longitude || normalized.latitude !== vehicle.latitude;
+  const toRad = Math.PI / 180;
+  const heading = moved
+    ? ((Math.atan2(Math.sin((normalized.longitude - vehicle.longitude) * toRad) * Math.cos(normalized.latitude * toRad),
+        Math.cos(vehicle.latitude * toRad) * Math.sin(normalized.latitude * toRad) - Math.sin(vehicle.latitude * toRad) * Math.cos(normalized.latitude * toRad) * Math.cos((normalized.longitude - vehicle.longitude) * toRad)) / toRad) + 360) % 360
+    : vehicle.heading;
+  return { ...normalized, heading };
+}

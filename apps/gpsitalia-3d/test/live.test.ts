@@ -63,3 +63,31 @@ describe('mergeFleet', () => {
     expect(mergeFleet(state, shifted)).toHaveLength(450);
   });
 });
+
+import { applyLocation, fleetIntervalMs, readsPerMinute } from '../src/live';
+
+describe('fleet load', () => {
+  it('slows the full refresh for big fleets', () => {
+    expect([150, 800, 2_500, 5_000].map(fleetIntervalMs)).toEqual([30_000, 60_000, 120_000, 180_000]);
+  });
+  it('keeps platform reads per tab bounded', () => {
+    expect(readsPerMinute(150, false)).toBe(2);
+    expect(readsPerMinute(2_000, true)).toBe(5 + 6);   // was 20/min with a fixed 30 s refresh
+    expect(readsPerMinute(5_000, true)).toBeLessThanOrEqual(15);
+  });
+});
+
+describe('applyLocation', () => {
+  const base = v('7', '2026-11-23T12:00:00.000Z', 12);
+  it('moves the vehicle and derives the heading from the movement', () => {
+    const next = applyLocation(base, { imei: '7', latitude: 41.001, longitude: 12, speed: 20, timestamp: '2026-11-23T12:00:10Z' }, Date.parse('2026-11-23T12:00:20Z'))!;
+    expect(next.latitude).toBe(41.001);
+    expect(next.heading).toBeCloseTo(0, 0);
+    expect(next.name).toBe(base.name);
+  });
+  it('ignores older or equal points and garbage', () => {
+    expect(applyLocation(base, { latitude: 41.1, longitude: 12, timestamp: '2026-11-23T11:59:00Z' })).toBeNull();
+    expect(applyLocation(base, null)).toBeNull();
+    expect(applyLocation(base, { error: 'x' })).toBeNull();
+  });
+});

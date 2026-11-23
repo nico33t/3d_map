@@ -1,14 +1,14 @@
 import { createMap, type Camera, type MapSession } from '@3d-map/core';
 import { createMapboxProvider, createMapboxFleetLayer, createMapboxVehicle, setMapboxBasemap, type MapboxBasemap, type MapboxVehicle } from '@3d-map/mapbox';
 import { createVehicleMotion, getVehicle, getVehicleUrl } from '@3d-map/vehicles-3d';
-import { createFleetState, mergeFleet, normalizeLiveRows, type LiveVehicle } from '../src/live';
+import { applyLocation, createFleetState, fleetIntervalMs, mergeFleet, normalizeLiveRows, SELECTED_INTERVAL_MS, type LiveVehicle } from '../src/live';
+import { renewDelayMs, saveResume, takeResume, type ResumeState } from '../src/resume';
 import { sessionWorked, shouldAutoRelogin } from '../src/relogin';
 import { dayRange, findStops, normalizeHistory, poseAt, trailUntil, type TrackPoint } from '../src/timelapse';
 import { createInactivityWatch, DEFAULT_COUNTDOWN_MS } from '../src/inactivity';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './style.css';
 
-const POLL_MS = 30_000; // the platform caches last-locations for 30 s
 const PAGE_SIZE = 200;
 const MAX_PAGES = 25;
 const LIST_LIMIT = 300;
@@ -61,11 +61,15 @@ const formatTime = (iso: string) => new Date(iso).toLocaleString('it-IT', { day:
 const stateText: Record<LiveVehicle['state'], string> = { moving: 'In movimento', stopped: 'Fermo', stale: 'Dato non recente' };
 
 async function start() {
-  let config: { mapboxToken: string; appUrl: string };
+  let config: { mapboxToken: string; appUrl: string; authUrl: string };
+  let expiresAt = Number.NaN;
+  const resume = takeResume(storage);
   try {
-    const body = await getJson('/api/config', lifetime.signal) as { data?: { mapboxToken?: string; appUrl?: string } };
+    const body = await getJson('/api/config', lifetime.signal) as { data?: { mapboxToken?: string; appUrl?: string; authUrl?: string } };
     if (!body.data?.mapboxToken) throw new Error('Mappa non configurata.');
-    config = { mapboxToken: body.data.mapboxToken, appUrl: body.data.appUrl ?? 'https://app.gpsitalia.com' };
+    config = { mapboxToken: body.data.mapboxToken, appUrl: body.data.appUrl ?? 'https://app.gpsitalia.com', authUrl: body.data.authUrl ?? 'https://auth.gpsitalia.com' };
+    const session = await getJson('/api/session', lifetime.signal) as { data?: { expiresAt?: string } };
+    expiresAt = Date.parse(session.data?.expiresAt ?? '');
   } catch (error) {
     if (error instanceof SessionExpired) { sessionEnded(); return; }
     summary.textContent = 'Mappa non disponibile. Riprova più tardi.';
@@ -123,6 +127,7 @@ async function start() {
   // Timelapse of the selected vehicle's day. While it is open, live updates do not move the model.
   interface Replay { points: TrackPoint[]; from: number; to: number; t: number; playing: boolean }
   let replay: Replay | null = null;
+  let pendingReplayT: number | null = null;
   let replayController: AbortController | undefined;
   const replayTime = el<HTMLInputElement>('replay-time'), replayPlay = el<HTMLButtonElement>('replay-play');
   const replaySpeed = el<HTMLSelectElement>('replay-speed'), replayState = el('replay-state'), replayClock = el('replay-clock');
@@ -160,6 +165,7 @@ async function start() {
       replayState.textContent = `${points.length} punti\n${stops.length} ${stops.length === 1 ? 'sosta' : 'soste'} di almeno 5 minuti\nDalle ${new Date(replay.from).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} alle ${new Date(replay.to).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
       replayPlay.disabled = false; replayTime.disabled = false;
       motion.reset(); following = true; el('follow').setAttribute('aria-pressed', 'true');
+      if (pendingReplayT !== null) { replay.t = Math.min(replay.to, Math.max(replay.from, pendingReplayT)); pendingReplayT = null; }
       setPlaying(false); drawReplay();
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -266,10 +272,13 @@ async function start() {
     if (selected && !current) { select(null); return; }
     if (!replay && current && car && previous && current.recordedAt !== previous.recordedAt) {
       // Animate towards the new GPS point; never extrapolate beyond it.
-      const duration = Math.max(1_000, Math.min(POLL_MS, Date.parse(current.recordedAt) - Date.parse(previous.recordedAt)));
+      const duration = Math.max(1_000, Math.min(SELECTED_INTERVAL_MS * 3, Date.parse(current.recordedAt) - Date.parse(previous.recordedAt)));
       motion.target({ longitude: current.longitude, latitude: current.latitude, heading: current.heading }, duration);
     }
-    if (!framed && vehicles.length) { framed = true; frameAll(); }
+    if (!framed && vehicles.length) {
+      framed = true;
+      if (resume) void restore(resume); else frameAll();
+    }
   };
 
   let pollController: AbortController | undefined;
@@ -293,7 +302,7 @@ async function start() {
       if (error instanceof SessionExpired) { sessionEnded(); return; }
       showError('Posizioni non aggiornate. Nuovo tentativo tra poco.');
     } finally {
-      if (!signal.aborted) pollTimer = setTimeout(() => void poll(), POLL_MS);
+      if (!signal.aborted) pollTimer = setTimeout(() => void poll(), fleetIntervalMs(vehicles.length));
     }
   };
 
@@ -328,27 +337,86 @@ async function start() {
 
   let basemap: MapboxBasemap = 'standard';
   let switching = false;
+  async function setBasemap(target: MapboxBasemap) {
+    if (switching || basemap === target) return;
+    switching = true;
+    try {
+      await setMapboxBasemap(map, target, lifetime.signal);
+      basemap = target;
+      el('standard').setAttribute('aria-pressed', String(basemap === 'standard'));
+      el('hybrid').setAttribute('aria-pressed', String(basemap === 'hybrid'));
+    } catch { if (!lifetime.signal.aborted) showError('Cambio mappa non riuscito.'); }
+    finally { switching = false; }
+  }
   for (const [id, target] of [['standard', 'standard'], ['hybrid', 'hybrid']] as const) {
-    el(id).addEventListener('click', async () => {
-      if (switching || basemap === target) return;
-      switching = true;
+    el(id).addEventListener('click', () => void setBasemap(target), { signal: lifetime.signal });
+  }
+
+  // Selected vehicle: cheap single-row refresh every 10 s, independent of the fleet interval.
+  let selectedTimer: ReturnType<typeof setTimeout> | undefined;
+  const pollSelected = async () => {
+    clearTimeout(selectedTimer);
+    if (!lifetime.signal.aborted && !document.hidden && selected && !replay) {
+      const imei = selected;
       try {
-        await setMapboxBasemap(map, target, lifetime.signal);
-        basemap = target;
-        el('standard').setAttribute('aria-pressed', String(basemap === 'standard'));
-        el('hybrid').setAttribute('aria-pressed', String(basemap === 'hybrid'));
-      } catch { if (!lifetime.signal.aborted) showError('Cambio mappa non riuscito.'); }
-      finally { switching = false; }
-    }, { signal: lifetime.signal });
+        const body = await getJson(`/api/platform/vehicles/${imei}/location`, lifetime.signal);
+        const known = vehicles.find(v => v.imei === imei);
+        const next = known && selected === imei ? applyLocation(known, body) : null;
+        if (next) {
+          const entry = fleetState.vehicles.get(imei);
+          if (entry) entry.vehicle = next;
+          applyUpdate(vehicles.map(v => v.imei === imei ? next : v));
+        }
+      } catch (error) { if (error instanceof SessionExpired) { sessionEnded(); return; } }
+    }
+    if (!lifetime.signal.aborted) selectedTimer = setTimeout(() => void pollSelected(), SELECTED_INTERVAL_MS);
+  };
+  selectedTimer = setTimeout(() => void pollSelected(), SELECTED_INTERVAL_MS);
+
+  // Hourly renewal through auth (no iframe allowed there): save the view, navigate, restore on return.
+  let renewPending = false;
+  const renewNow = () => {
+    if (lifetime.signal.aborted) return;
+    if (document.hidden) { renewPending = true; return; }
+    const camera = map.getCamera();
+    const state: ResumeState = {
+      selected, basemap, following, search: search.value,
+      camera: { longitude: camera.center.longitude, latitude: camera.center.latitude, zoom: camera.zoom, pitch: camera.pitch, bearing: camera.bearing },
+      replay: replay ? { day: replayDay.value, t: replay.t, speed: replaySpeed.value } : null,
+    };
+    saveResume(storage, state);
+    lifetime.abort();
+    const target = new URL('/login', config.authUrl);
+    target.searchParams.set('redirect', `${location.origin}/`);
+    location.assign(target.toString());
+  };
+  const renewTimer = setTimeout(renewNow, renewDelayMs(expiresAt));
+
+  async function restore(state: ResumeState) {
+    search.value = state.search; renderList();
+    if (state.basemap !== basemap) await setBasemap(state.basemap);
+    if (state.selected && vehicles.some(v => v.imei === state.selected)) select(state.selected);
+    following = state.following;
+    el('follow').setAttribute('aria-pressed', String(following));
+    if (state.camera) map.setCamera({ center: { longitude: state.camera.longitude, latitude: state.camera.latitude }, zoom: state.camera.zoom, pitch: state.camera.pitch, bearing: state.camera.bearing });
+    if (state.replay && selected) {
+      replayDay.value = state.replay.day;
+      replaySpeed.value = state.replay.speed;
+      el('replay').hidden = false; el('selected').hidden = true;
+      pendingReplayT = state.replay.t;
+      void loadReplay();
+    }
   }
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { clearTimeout(pollTimer); pollController?.abort(); return; }
     idle.check();
+    if (renewPending || renewDelayMs(expiresAt) === 0) { renewNow(); return; }
     void poll();
+    void pollSelected();
   }, { signal: lifetime.signal });
 
-  lifetime.signal.addEventListener('abort', () => { idle.stop(); clearTimeout(pollTimer); pollController?.abort(); clearCar(); }, { once: true });
+  lifetime.signal.addEventListener('abort', () => { idle.stop(); clearTimeout(pollTimer); clearTimeout(selectedTimer); clearTimeout(renewTimer); pollController?.abort(); clearCar(); }, { once: true });
   await poll();
 }
 
