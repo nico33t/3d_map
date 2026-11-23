@@ -33,6 +33,7 @@ secrets/
 *.log
 logs/
 test-results/
+.playwright-mcp/
 playwright-report/
 blob-report/
 screenshots/

@@ -5,3 +5,5 @@ AUTH_URL=https://auth.gpsitalia.com
 APP_URL=https://app.gpsitalia.com
 ALLOWED_ROLES=creator
 PLATFORM_API_URL=
+# Public Mapbox token (pk.), restricted to the site URL. Served by /api/config only after login.
+MAPBOX_TOKEN=

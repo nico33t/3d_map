@@ -29,7 +29,17 @@ pubblicazione e il DNS richiedono una decisione esplicita.
 - **Non indicizzato:** `X-Robots-Tag: noindex, nofollow`, `robots.txt` con
   `Disallow: /` e meta robots.
 
-La mappa (live dei mezzi, timelapse, inattività) arriva nei prossimi passi.
+- **Mappa live** (`web/`, build Vite in `dist/`):
+  - tutti i mezzi visibili su un unico livello GeoJSON, colorati per stato (in movimento, fermo, dato non recente), con il nome da zoom 13;
+  - elenco con ricerca per nome o targa;
+  - il mezzo scelto diventa un modello 3D (Kenney CC0) con movimento interpolato verso l'ultimo punto GPS, senza mai superarlo, e camera al seguito;
+  - vista Standard 3D o Satellite 3D;
+  - aggiornamento ogni 30 secondi (la piattaforma tiene in cache 30 s), sospeso a scheda nascosta.
+- **Inattività:** dopo 10 minuti senza interazioni compare «Sei ancora qui?» con 60 secondi di conto alla rovescia, poi rimando su `APP_URL`. Tornando su una scheda nascosta oltre la scadenza, il rimando è immediato.
+- **Dati minimi:** il proxy pagina `last-locations` (al massimo 200 righe per richiesta) e lascia passare solo `imei`, `name`, `targa`, posizione, direzione, velocità e orario. Telefono, indirizzo e dati IO non arrivano al browser.
+- `/api/config` consegna il token pubblico Mapbox solo dopo l'accesso: il token non è nel bundle statico.
+
+Il timelapse dello storico arriva nel prossimo passo.
 
 ## Variabili d'ambiente
 
@@ -43,12 +53,14 @@ vedi `.dev.vars.example`). Nessuna chiave nel codice.
 | `AUTH_URL` | Default `https://auth.gpsitalia.com`. |
 | `APP_URL` | Default `https://app.gpsitalia.com`. |
 | `ALLOWED_ROLES` | Default `creator`. |
+| `MAPBOX_TOKEN` | Token pubblico Mapbox (`pk.`), limitato all'URL del sito. |
 
 ## Sviluppo
 
 ```sh
 cp .dev.vars.example .dev.vars   # compilare con valori locali
-cd apps/gpsitalia-3d && npm run dev
+npm run build:3d                 # dalla radice: pacchetti + dist/ dell'app
+cd apps/gpsitalia-3d && npx wrangler pages dev dist --compatibility-date=2026-05-01
 npm test                         # dalla radice: include i test dell'app
 ```
 

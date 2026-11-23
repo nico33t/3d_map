@@ -23,8 +23,18 @@ su npm, una release GitHub o il cambio di visibilità della repository.
   dell'utente, ruolo ricontrollato a ogni chiamata, nessun cookie o redirect
   dalla piattaforma.
 - `noindex` su tutte le risposte e `robots.txt` con `Disallow: /`.
+- Mappa live di tutti i mezzi visibili:
+  - livello GeoJSON per stato;
+  - elenco con ricerca;
+  - mezzo scelto in 3D con movimento interpolato e camera al seguito;
+  - vista Standard o Satellite 3D;
+  - aggiornamento ogni 30 secondi, sospeso a scheda nascosta.
+- Avviso di inattività: 10 minuti, poi «Sei ancora qui?» con 60 secondi di conto alla rovescia, poi ritorno all'app.
+- Il proxy limita `last-locations` a 200 righe per richiesta e passa solo i campi necessari alla mappa.
+- `/api/config` consegna il token pubblico Mapbox solo dopo l'accesso.
+- `@3d-map/mapbox`: nuovo `createMapboxFleetLayer` per molti mezzi su un unico livello GeoJSON.
 - Configurazione solo da variabili d'ambiente (`.dev.vars` ignorato da Git).
-- Limite: la mappa vera e propria (live, timelapse, inattività) non è ancora inclusa.
+- Limite: il timelapse dello storico non è ancora incluso.
 
 ### Testi dell'interfaccia
 

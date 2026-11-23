@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Mappa 3D GPS Italia</title>
+  </head>
+  <body>
+    <main id="map" aria-label="Mappa 3D dei mezzi"></main>
+    <aside id="panel" aria-label="Mezzi">
+      <header>
+        <h1>Mappa 3D</h1>
+        <a id="logout" href="/logout">Esci</a>
+      </header>
+      <p id="summary" role="status">Caricamento dei mezzi…</p>
+      <div class="segmented" role="group" aria-label="Tipo di mappa">
+        <button id="standard" type="button" aria-pressed="true">Standard 3D</button>
+        <button id="hybrid" type="button" aria-pressed="false">Satellite 3D</button>
+      </div>
+      <input id="search" type="search" placeholder="Cerca per nome o targa" autocomplete="off" aria-label="Cerca un mezzo">
+      <ul id="list"></ul>
+      <section id="selected" hidden>
+        <h2 id="selected-name"></h2>
+        <p id="selected-detail"></p>
+        <div class="row">
+          <button id="follow" type="button" aria-pressed="true">Segui il mezzo</button>
+          <button id="deselect" type="button">Chiudi</button>
+        </div>
+      </section>
+      <p id="updated" class="muted"></p>
+    </aside>
+    <p id="error" role="alert" hidden></p>
+    <dialog id="idle-dialog" aria-labelledby="idle-title">
+      <h2 id="idle-title">Sei ancora qui?</h2>
+      <p id="idle-text">Per non consumare la mappa 3D senza nessuno davanti, tra 60 secondi torni all’app GPS Italia.</p>
+      <button id="idle-stay" type="button">Sì, continuo</button>
+    </dialog>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

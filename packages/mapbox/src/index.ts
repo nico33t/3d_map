@@ -1,6 +1,7 @@
 export { createLightningEffect, type LightningEffect } from './lightning.js';
 export { setMapboxBasemap, type MapboxBasemap } from './basemap.js';
 export { createMapboxAreaWalls, type MapboxAreaWalls, type MapboxAreaWallsOptions } from './areas.js';
+export { createMapboxFleetLayer, fleetFeatures, type MapboxFleetLayer, type MapboxFleetLayerOptions, type FleetPoint, type FleetPointState } from './fleet.js';
 import {
   validateCamera, validateMarkers,
   type Camera, type MapEvents, type MapProvider, type MapSession,

@@ -17,11 +17,12 @@
     "test": "vitest run",
     "dev": "npm run build && npm run dev -w @3d-map/playground",
     "build:example": "npm run build && npm run build -w @3d-map/playground",
-    "check": "npm run typecheck && npm test && npm run build:example",
+    "check": "npm run typecheck && npm test && npm run build:example && vite build --config apps/gpsitalia-3d/vite.config.ts",
     "check:secrets": "node scripts/check-secrets.mjs",
     "start": "npm run build:example && node scripts/start-app.mjs",
     "start:local": "npm run build:example && node scripts/start-app.mjs --no-tunnel",
-    "check:public": "node scripts/check-public.mjs --history"
+    "check:public": "node scripts/check-public.mjs --history",
+    "build:3d": "npm run build && vite build --config apps/gpsitalia-3d/vite.config.ts"
   },
   "devDependencies": {
     "@types/geojson": "7946.0.16",

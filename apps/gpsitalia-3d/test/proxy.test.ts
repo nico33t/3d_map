@@ -14,7 +14,7 @@ const get = (path: string, init: RequestInit = {}) => new Request(`${ORIGIN}${pa
 
 describe('proxyPlatform', () => {
   it.each([
-    ['/api/platform/last-locations?page=1&limit=200', 'https://api.example.test/api/last-locations?page=1&limit=200'],
+    ['/api/platform/last-locations?page=2&limit=100', 'https://api.example.test/api/last-locations?page=2&limit=100'],
     ['/api/platform/vehicles?limit=1000&offset=0', 'https://api.example.test/api/vehicles?limit=1000&offset=0'],
     [`/api/platform/vehicles/${IMEI}/location`, `https://api.example.test/api/vehicles/${IMEI}/location`],
     [`/api/platform/vehicles/${IMEI}/history?start=2026-11-22T00:00:00.000Z&end=2026-11-22T23:59:59.999Z&detail=light`, `https://api.example.test/api/vehicles/${IMEI}/history?start=2026-11-22T00%3A00%3A00.000Z&end=2026-11-22T23%3A59%3A59.999Z&detail=light`],
@@ -98,5 +98,28 @@ describe('proxyPlatform', () => {
     const { calls, fetcher } = recorder();
     expect((await proxyPlatform(get('/api/platform/vehicles'), 't', badEnv, fetcher)).status).toBe(503);
     expect(calls).toHaveLength(0);
+  });
+
+  it('bounds last-locations pages so the Worker never parses a whole fleet', async () => {
+    for (const [query, expected] of [['', 'page=1&limit=200'], ['?limit=5000&page=0', 'page=1&limit=200'], ['?page=99', 'page=1&limit=200'], ['?page=3&limit=50', 'page=3&limit=50']] as const) {
+      const { calls, fetcher } = recorder(new Response('[]', { headers: { 'Content-Type': 'application/json' } }));
+      await proxyPlatform(get(`/api/platform/last-locations${query}`), 't', env, fetcher);
+      expect(calls[0]!.url).toBe(`https://api.example.test/api/last-locations?${expected}`);
+    }
+  });
+
+  it('strips personal fields from last-locations (phone, address, io…)', async () => {
+    const upstream = { data: [{ imei: '000000000000001', name: 'A', targa: 'XX', latitude: 41, longitude: 12, heading: 1, speed: 2, timestamp: 't', telefono: '+39000', address: 'Via X', io: { a: 1 }, deletion_requested_at: null }], page: 1, limit: 200, count: 1 };
+    const { fetcher } = recorder(new Response(JSON.stringify(upstream), { headers: { 'Content-Type': 'application/json', ETag: 'W/"x"' } }));
+    const response = await proxyPlatform(get('/api/platform/last-locations'), 't', env, fetcher);
+    const body = await response.json() as { data: Record<string, unknown>[]; count: number };
+    expect(Object.keys(body.data[0]!).sort()).toEqual(['heading', 'imei', 'latitude', 'longitude', 'name', 'speed', 'targa', 'timestamp']);
+    expect(body.count).toBe(1);
+    expect(response.headers.get('ETag')).toBeNull();
+  });
+
+  it('answers 502 when last-locations is not JSON', async () => {
+    const { fetcher } = recorder(new Response('<html>', { headers: { 'Content-Type': 'text/html' } }));
+    expect((await proxyPlatform(get('/api/platform/last-locations'), 't', env, fetcher)).status).toBe(502);
   });
 });
