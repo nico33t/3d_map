@@ -122,4 +122,11 @@ describe('proxyPlatform', () => {
     const { fetcher } = recorder(new Response('<html>', { headers: { 'Content-Type': 'text/html' } }));
     expect((await proxyPlatform(get('/api/platform/last-locations'), 't', env, fetcher)).status).toBe(502);
   });
+
+  it('clears the own session cookie when the platform answers 401', async () => {
+    const { fetcher } = recorder(new Response('{}', { status: 401, headers: { 'Content-Type': 'application/json' } }));
+    const response = await proxyPlatform(get('/api/platform/vehicles'), 't', env, fetcher);
+    expect(response.status).toBe(401);
+    expect(response.headers.get('Set-Cookie')).toMatch(/^map3d_session=;.*Max-Age=0/);
+  });
 });

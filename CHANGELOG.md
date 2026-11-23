@@ -32,6 +32,11 @@ su npm, una release GitHub o il cambio di visibilità della repository.
 - Avviso di inattività: 10 minuti, poi «Sei ancora qui?» con 60 secondi di conto alla rovescia, poi ritorno all'app.
 - Il proxy limita `last-locations` a 200 righe per richiesta e passa solo i campi necessari alla mappa.
 - `/api/config` consegna il token pubblico Mapbox solo dopo l'accesso.
+- Sessione rifiutata dalla piattaforma:
+  - il proxy cancella il cookie `map3d_session`;
+  - la pagina tenta un solo nuovo accesso automatico, poi si ferma su «Sessione scaduta»;
+  - le posizioni si leggono prima di aprire la mappa, quindi non si spendono caricamenti Mapbox.
+- I mezzi vengono uniti per IMEI fra un aggiornamento e l'altro: un mezzo che salta una pagina non sparisce, esce solo dopo 3 aggiornamenti mancati.
 - `@3d-map/mapbox`: nuovo `createMapboxFleetLayer` per molti mezzi su un unico livello GeoJSON.
 - Configurazione solo da variabili d'ambiente (`.dev.vars` ignorato da Git).
 - Limite: il timelapse dello storico non è ancora incluso.

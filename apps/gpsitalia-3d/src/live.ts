@@ -51,3 +51,34 @@ export function normalizeLiveRows(body: unknown, nowMs = Date.now()): LiveVehicl
 
 /** Fields the browser needs from a last-locations row: everything else is dropped by the proxy. */
 export const LIVE_FIELDS = ['imei', 'name', 'targa', 'latitude', 'longitude', 'heading', 'speed', 'timestamp'] as const;
+
+export interface FleetState {
+  vehicles: Map<string, { vehicle: LiveVehicle; misses: number }>;
+}
+
+/** Polls missed before a vehicle leaves the map: pages can skip rows while vehicles move. */
+export const MAX_MISSES = 3;
+
+export function createFleetState(): FleetState { return { vehicles: new Map() }; }
+
+/**
+ * Merges one poll into the known fleet by IMEI. The platform pages by latest
+ * timestamp, so a moving vehicle can slip between pages: it is kept until it
+ * is missing from MAX_MISSES consecutive polls. An older point never replaces
+ * a newer one.
+ */
+export function mergeFleet(state: FleetState, polled: readonly LiveVehicle[]): LiveVehicle[] {
+  const seen = new Set<string>();
+  for (const vehicle of polled) {
+    seen.add(vehicle.imei);
+    const known = state.vehicles.get(vehicle.imei);
+    if (known && Date.parse(known.vehicle.recordedAt) > Date.parse(vehicle.recordedAt)) { known.misses = 0; continue; }
+    state.vehicles.set(vehicle.imei, { vehicle, misses: 0 });
+  }
+  for (const [imei, entry] of state.vehicles) {
+    if (seen.has(imei)) continue;
+    entry.misses++;
+    if (entry.misses >= MAX_MISSES) state.vehicles.delete(imei);
+  }
+  return [...state.vehicles.values()].map(entry => entry.vehicle);
+}

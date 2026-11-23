@@ -131,7 +131,7 @@ export function messagePage(status: number, title: string, text: string, link: {
 }
 
 const sessionCookie = (token: string, maxAgeS: number) => `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${Math.max(0, Math.floor(maxAgeS))}`;
-const clearSessionCookie = () => `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+export const clearSessionCookie = () => `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 
 const isApiRequest = (url: URL) => url.pathname === '/api' || url.pathname.startsWith('/api/');
 const PUBLIC_PATHS = new Set(['/robots.txt']);

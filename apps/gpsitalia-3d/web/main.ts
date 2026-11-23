@@ -1,7 +1,8 @@
 import { createMap, type Camera, type MapSession } from '@3d-map/core';
 import { createMapboxProvider, createMapboxFleetLayer, createMapboxVehicle, setMapboxBasemap, type MapboxBasemap, type MapboxVehicle } from '@3d-map/mapbox';
 import { createVehicleMotion, getVehicle, getVehicleUrl } from '@3d-map/vehicles-3d';
-import { normalizeLiveRows, type LiveVehicle } from '../src/live';
+import { createFleetState, mergeFleet, normalizeLiveRows, type LiveVehicle } from '../src/live';
+import { sessionWorked, shouldAutoRelogin } from '../src/relogin';
 import { createInactivityWatch, DEFAULT_COUNTDOWN_MS } from '../src/inactivity';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './style.css';
@@ -27,6 +28,29 @@ async function getJson(path: string, signal: AbortSignal): Promise<unknown> {
   return response.json();
 }
 
+const storage = (() => { try { return window.sessionStorage; } catch { return undefined; } })();
+
+/** Session refused: one automatic trip through the shared login, then stop (no reload loop). */
+function sessionEnded() {
+  if (shouldAutoRelogin(storage)) { location.reload(); return; }
+  lifetime.abort();
+  summary.textContent = 'Sessione scaduta.';
+  const link = document.createElement('a'); link.href = '/logout'; link.textContent = 'Accedi di nuovo';
+  list.replaceChildren(link);
+}
+
+/** All pages of the live positions (bounded). */
+async function fetchPositions(signal: AbortSignal): Promise<unknown[]> {
+  const rows: unknown[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const body = await getJson(`/api/platform/last-locations?page=${page}&limit=${PAGE_SIZE}`, signal) as { data?: unknown[] } | unknown[];
+    const data = Array.isArray(body) ? body : Array.isArray(body.data) ? body.data : [];
+    rows.push(...data);
+    if (data.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
+
 function showError(message: string | null) {
   errorBox.hidden = !message;
   errorBox.textContent = message ?? '';
@@ -42,7 +66,7 @@ async function start() {
     if (!body.data?.mapboxToken) throw new Error('Mappa non configurata.');
     config = { mapboxToken: body.data.mapboxToken, appUrl: body.data.appUrl ?? 'https://app.gpsitalia.com' };
   } catch (error) {
-    if (error instanceof SessionExpired) { location.reload(); return; }
+    if (error instanceof SessionExpired) { sessionEnded(); return; }
     summary.textContent = 'Mappa non disponibile. Riprova più tardi.';
     return;
   }
@@ -66,6 +90,14 @@ async function start() {
   for (const type of ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const) window.addEventListener(type, activity, { passive: true, signal: lifetime.signal });
   window.addEventListener('pointermove', () => { const now = Date.now(); if (now - lastMove > 5_000) { lastMove = now; activity(); } }, { passive: true, signal: lifetime.signal });
 
+  // Data first: if the platform refuses the session no map load is spent.
+  let firstRows: unknown[] | undefined;
+  try { firstRows = await fetchPositions(lifetime.signal); }
+  catch (error) {
+    if (error instanceof SessionExpired) { sessionEnded(); return; }
+    // Platform temporarily unavailable: show the map anyway, polling retries.
+  }
+
   let map: MapSession;
   try {
     map = await createMap(createMapboxProvider({ accessToken: config.mapboxToken }), { container: el('map'), camera: ITALY, signal: lifetime.signal });
@@ -76,6 +108,7 @@ async function start() {
   map.on('error', () => showError('Errore della mappa. Ricarica la pagina se il problema continua.'));
 
   let vehicles: LiveVehicle[] = [];
+  const fleetState = createFleetState();
   let selected: string | null = null;
   let following = true;
   let framed = false;
@@ -172,20 +205,16 @@ async function start() {
     const controller = pollController = new AbortController();
     const signal = AbortSignal.any([controller.signal, lifetime.signal]);
     try {
-      const rows: unknown[] = [];
-      for (let page = 1; page <= MAX_PAGES; page++) {
-        const body = await getJson(`/api/platform/last-locations?page=${page}&limit=${PAGE_SIZE}`, signal) as { data?: unknown[] } | unknown[];
-        const data = Array.isArray(body) ? body : Array.isArray(body.data) ? body.data : [];
-        rows.push(...data);
-        if (data.length < PAGE_SIZE) break;
-      }
+      const rows = firstRows ?? await fetchPositions(signal);
+      firstRows = undefined;
       if (signal.aborted) return;
-      applyUpdate(normalizeLiveRows(rows));
+      applyUpdate(mergeFleet(fleetState, normalizeLiveRows(rows)));
+      sessionWorked(storage);
       updated.textContent = `Aggiornato alle ${new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
       showError(null);
     } catch (error) {
       if (signal.aborted) return;
-      if (error instanceof SessionExpired) { location.reload(); return; }
+      if (error instanceof SessionExpired) { sessionEnded(); return; }
       showError('Posizioni non aggiornate. Nuovo tentativo tra poco.');
     } finally {
       if (!signal.aborted) pollTimer = setTimeout(() => void poll(), POLL_MS);

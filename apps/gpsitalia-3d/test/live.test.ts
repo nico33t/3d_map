@@ -30,3 +30,36 @@ describe('normalizeLiveRows', () => {
     expect(normalizeLiveRows({ error: 'x' })).toEqual([]);
   });
 });
+
+import { createFleetState, mergeFleet, MAX_MISSES, type LiveVehicle } from '../src/live';
+
+const v = (imei: string, recordedAt = '2026-11-23T12:00:00.000Z', longitude = 12): LiveVehicle => ({ imei, name: imei, plate: '', longitude, latitude: 41, heading: 0, speedKmh: 0, recordedAt, state: 'stopped' });
+
+describe('mergeFleet', () => {
+  it('keeps a vehicle missing from one poll (page shift) and drops it after MAX_MISSES', () => {
+    const state = createFleetState();
+    mergeFleet(state, [v('a'), v('b')]);
+    for (let i = 1; i < MAX_MISSES; i++) expect(mergeFleet(state, [v('a')]).map(x => x.imei).sort()).toEqual(['a', 'b']);
+    expect(mergeFleet(state, [v('a')]).map(x => x.imei)).toEqual(['a']);
+  });
+  it('resets the miss counter when the vehicle comes back', () => {
+    const state = createFleetState();
+    mergeFleet(state, [v('a'), v('b')]);
+    mergeFleet(state, [v('a')]); mergeFleet(state, [v('a'), v('b')]);
+    for (let i = 1; i < MAX_MISSES; i++) mergeFleet(state, [v('a')]);
+    expect(mergeFleet(state, []).length).toBe(1); // a: 1 miss, b: dropped now
+  });
+  it('never replaces a newer point with an older one (cached page)', () => {
+    const state = createFleetState();
+    mergeFleet(state, [v('a', '2026-11-23T12:00:10.000Z', 13)]);
+    expect(mergeFleet(state, [v('a', '2026-11-23T12:00:00.000Z', 12)])[0]!.longitude).toBe(13);
+  });
+  it('survives a 450-vehicle fleet whose order changes between pages', () => {
+    const state = createFleetState();
+    const fleet = Array.from({ length: 450 }, (_, i) => v(String(i)));
+    mergeFleet(state, fleet);
+    // A reshuffle makes pages 1-3 skip 30 vehicles and repeat others.
+    const shifted = [...fleet.slice(30), ...fleet.slice(30, 60)];
+    expect(mergeFleet(state, shifted)).toHaveLength(450);
+  });
+});

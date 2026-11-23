@@ -1,4 +1,4 @@
-import { SECURITY_HEADERS, type AccessEnv } from './auth';
+import { SECURITY_HEADERS, clearSessionCookie, type AccessEnv } from './auth';
 import { LIVE_FIELDS } from './live';
 
 /**
@@ -77,6 +77,9 @@ export async function proxyPlatform(request: Request, token: string, env: Access
   if (upstream.status >= 300 && upstream.status < 400 && upstream.status !== 304) return json(502, 'UPSTREAM_REDIRECT', 'Risposta inattesa del servizio GPS.');
   // Never pass upstream cookies or caching to the browser.
   const out = new Headers({ 'Cache-Control': 'private, no-store', ...SECURITY_HEADERS });
+  // The platform refused a token that verifies locally (e.g. revoked by a logout elsewhere):
+  // drop our own copy so the next page load goes back through the shared login.
+  if (upstream.status === 401) out.append('Set-Cookie', clearSessionCookie());
   if (route.project && upstream.ok && request.method === 'GET') {
     let body: unknown;
     try { body = await upstream.json(); } catch { return json(502, 'INVALID_RESPONSE', 'Risposta del servizio GPS non valida.'); }
