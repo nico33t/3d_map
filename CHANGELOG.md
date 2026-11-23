@@ -39,7 +39,13 @@ su npm, una release GitHub o il cambio di visibilità della repository.
 - I mezzi vengono uniti per IMEI fra un aggiornamento e l'altro: un mezzo che salta una pagina non sparisce, esce solo dopo 3 aggiornamenti mancati.
 - `@3d-map/mapbox`: nuovo `createMapboxFleetLayer` per molti mezzi su un unico livello GeoJSON.
 - Configurazione solo da variabili d'ambiente (`.dev.vars` ignorato da Git).
-- Limite: il timelapse dello storico non è ancora incluso.
+- Timelapse del percorso del mezzo scelto, per giorno:
+  - modello 3D con la scia e movimento interpolato fra i punti registrati, senza mai superarli;
+  - nelle interruzioni di registrazione oltre 10 minuti il mezzo resta fermo;
+  - cursore del tempo, velocità da 1 minuto a 1 ora al secondo;
+  - conteggio delle soste di almeno 5 minuti;
+  - ritorno alla diretta.
+- Il proxy limita lo storico a 20.000 punti per richiesta.
 
 ### Testi dell'interfaccia
 

@@ -3,6 +3,7 @@ import { createMapboxProvider, createMapboxFleetLayer, createMapboxVehicle, setM
 import { createVehicleMotion, getVehicle, getVehicleUrl } from '@3d-map/vehicles-3d';
 import { createFleetState, mergeFleet, normalizeLiveRows, type LiveVehicle } from '../src/live';
 import { sessionWorked, shouldAutoRelogin } from '../src/relogin';
+import { dayRange, findStops, normalizeHistory, poseAt, trailUntil, type TrackPoint } from '../src/timelapse';
 import { createInactivityWatch, DEFAULT_COUNTDOWN_MS } from '../src/inactivity';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './style.css';
@@ -119,6 +120,80 @@ async function start() {
 
   const fleet = createMapboxFleetLayer(map, { onSelect: id => select(id) });
 
+  // Timelapse of the selected vehicle's day. While it is open, live updates do not move the model.
+  interface Replay { points: TrackPoint[]; from: number; to: number; t: number; playing: boolean }
+  let replay: Replay | null = null;
+  let replayController: AbortController | undefined;
+  const replayTime = el<HTMLInputElement>('replay-time'), replayPlay = el<HTMLButtonElement>('replay-play');
+  const replaySpeed = el<HTMLSelectElement>('replay-speed'), replayState = el('replay-state'), replayClock = el('replay-clock');
+  const replayDay = el<HTMLInputElement>('replay-day');
+  const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  replayDay.max = localDate();
+  const drawReplay = () => {
+    if (!replay || !car) return;
+    const pose = poseAt(replay.points, replay.t);
+    if (!pose) return;
+    car.update(pose, pose.heading, trailUntil(replay.points, replay.t));
+    if (following) map.setCamera({ ...map.getCamera(), center: pose });
+    replayClock.textContent = `${new Date(replay.t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}, ${Math.round(pose.speedKmh)} km/h`;
+    replayTime.value = String(Math.round((replay.t - replay.from) / Math.max(1, replay.to - replay.from) * 1000));
+  };
+  const setPlaying = (playing: boolean) => {
+    if (!replay) return;
+    replay.playing = playing;
+    replayPlay.textContent = playing ? 'Pausa' : 'Riproduci';
+  };
+  const loadReplay = async () => {
+    replayController?.abort();
+    const imei = selected, range = dayRange(replayDay.value);
+    if (!imei || !range) return;
+    const controller = replayController = new AbortController();
+    replay = null; replayPlay.disabled = true; replayTime.disabled = true; replayClock.textContent = '';
+    replayState.textContent = 'Caricamento del percorso…';
+    try {
+      const body = await getJson(`/api/platform/vehicles/${imei}/history?start=${encodeURIComponent(new Date(range.from).toISOString())}&end=${encodeURIComponent(new Date(range.to).toISOString())}`, AbortSignal.any([controller.signal, lifetime.signal]));
+      if (controller.signal.aborted || selected !== imei) return;
+      const points = normalizeHistory(body);
+      if (points.length < 2) { replayState.textContent = 'Nessun percorso registrato in questo giorno.'; return; }
+      const stops = findStops(points);
+      replay = { points, from: points[0]!.t, to: points.at(-1)!.t, t: points[0]!.t, playing: false };
+      replayState.textContent = `${points.length} punti\n${stops.length} ${stops.length === 1 ? 'sosta' : 'soste'} di almeno 5 minuti\nDalle ${new Date(replay.from).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} alle ${new Date(replay.to).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+      replayPlay.disabled = false; replayTime.disabled = false;
+      motion.reset(); following = true; el('follow').setAttribute('aria-pressed', 'true');
+      setPlaying(false); drawReplay();
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (error instanceof SessionExpired) { sessionEnded(); return; }
+      replayState.textContent = 'Percorso non disponibile. Riprova.';
+    }
+  };
+  const closeReplay = () => {
+    replayController?.abort();
+    replay = null;
+    el('replay').hidden = true;
+    el('selected').hidden = !selected;
+    const imei = selected;
+    if (imei) { selected = null; select(imei); }
+  };
+  el('replay-open').addEventListener('click', () => {
+    if (!selected) return;
+    el('replay').hidden = false; el('selected').hidden = true;
+    if (!replayDay.value) replayDay.value = localDate();
+    void loadReplay();
+  }, { signal: lifetime.signal });
+  replayDay.addEventListener('change', () => void loadReplay(), { signal: lifetime.signal });
+  replayPlay.addEventListener('click', () => {
+    if (!replay) return;
+    if (!replay.playing && replay.t >= replay.to) replay.t = replay.from;
+    setPlaying(!replay.playing);
+  }, { signal: lifetime.signal });
+  replayTime.addEventListener('input', () => {
+    if (!replay) return;
+    replay.t = replay.from + (replay.to - replay.from) * Number(replayTime.value) / 1000;
+    drawReplay();
+  }, { signal: lifetime.signal });
+  el('replay-close').addEventListener('click', closeReplay, { signal: lifetime.signal });
+
   const renderList = () => {
     const query = search.value.trim().toLowerCase();
     const filtered = (query ? vehicles.filter(v => v.name.toLowerCase().includes(query) || v.plate.toLowerCase().includes(query) || v.imei.includes(query)) : vehicles)
@@ -144,7 +219,7 @@ async function start() {
 
   const renderSelected = () => {
     const v = vehicles.find(x => x.imei === selected);
-    el('selected').hidden = !v;
+    el('selected').hidden = !v || !el('replay').hidden;
     if (!v) return;
     el('selected-name').textContent = v.name;
     el('selected-detail').textContent = [v.plate || null, `${stateText[v.state]}, ${Math.round(v.speedKmh)} km/h`, `Ultimo dato: ${formatTime(v.recordedAt)}`].filter(Boolean).join('\n');
@@ -167,6 +242,7 @@ async function start() {
   function select(imei: string | null) {
     idle.activity();
     if (imei === selected) return;
+    if (replay || !el('replay').hidden) { replayController?.abort(); replay = null; el('replay').hidden = true; }
     clearCar();
     selected = imei;
     fleet.setHidden(imei);
@@ -188,7 +264,7 @@ async function start() {
     renderSummary(); renderList(); renderSelected();
     const current = vehicles.find(v => v.imei === selected);
     if (selected && !current) { select(null); return; }
-    if (current && car && previous && current.recordedAt !== previous.recordedAt) {
+    if (!replay && current && car && previous && current.recordedAt !== previous.recordedAt) {
       // Animate towards the new GPS point; never extrapolate beyond it.
       const duration = Math.max(1_000, Math.min(POLL_MS, Date.parse(current.recordedAt) - Date.parse(previous.recordedAt)));
       motion.target({ longitude: current.longitude, latitude: current.latitude, heading: current.heading }, duration);
@@ -226,7 +302,11 @@ async function start() {
     if (lifetime.signal.aborted) return;
     const delta = Math.min(now - previousFrame, 100);
     previousFrame = now;
-    if (car && motion.active && !document.hidden) {
+    if (replay?.playing && !document.hidden) {
+      replay.t = Math.min(replay.to, replay.t + delta * Number(replaySpeed.value));
+      drawReplay();
+      if (replay.t >= replay.to) setPlaying(false);
+    } else if (!replay && car && motion.active && !document.hidden) {
       const pose = motion.advance(delta);
       if (pose) {
         car.update(pose, pose.heading, []);

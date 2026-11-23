@@ -17,6 +17,7 @@ interface Route {
 }
 
 export const LIVE_PAGE_SIZE = 200;
+export const HISTORY_MAX_POINTS = 20_000;
 
 const ROUTES: readonly Route[] = [
   {
@@ -29,7 +30,14 @@ const ROUTES: readonly Route[] = [
   },
   { pattern: /^\/vehicles$/, upstream: () => '/api/vehicles', query: ['limit', 'offset'] },
   { pattern: /^\/vehicles\/(\d{10,20})\/location$/, upstream: m => `/api/vehicles/${m[1]}/location`, query: [] },
-  { pattern: /^\/vehicles\/(\d{10,20})\/history$/, upstream: m => `/api/vehicles/${m[1]}/history`, query: ['start', 'end', 'limit', 'detail'] },
+  {
+    pattern: /^\/vehicles\/(\d{10,20})\/history$/, upstream: m => `/api/vehicles/${m[1]}/history`, query: ['start', 'end', 'limit', 'detail'],
+    // Rows carry no personal data (time, position, speed, angle): streamed as they are, but bounded.
+    force: query => {
+      const limit = Number(query.get('limit'));
+      query.set('limit', String(Number.isInteger(limit) && limit >= 1 && limit <= HISTORY_MAX_POINTS ? limit : HISTORY_MAX_POINTS));
+    },
+  },
 ];
 
 export const PROXY_PREFIX = '/api/platform';

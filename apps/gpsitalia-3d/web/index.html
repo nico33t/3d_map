@@ -27,6 +27,25 @@
           <button id="follow" type="button" aria-pressed="true">Segui il mezzo</button>
           <button id="deselect" type="button">Chiudi</button>
         </div>
+        <button id="replay-open" type="button">Timelapse del percorso</button>
+      </section>
+      <section id="replay" hidden aria-label="Timelapse">
+        <h2>Timelapse</h2>
+        <label class="muted" for="replay-day">Giorno</label>
+        <input id="replay-day" type="date">
+        <p id="replay-state" class="muted" role="status"></p>
+        <input id="replay-time" type="range" min="0" max="1000" value="0" step="1" aria-label="Momento del percorso" disabled>
+        <p id="replay-clock" class="clock"></p>
+        <div class="row">
+          <button id="replay-play" type="button" disabled>Riproduci</button>
+          <select id="replay-speed" aria-label="Velocità">
+            <option value="60">1 minuto al secondo</option>
+            <option value="300" selected>5 minuti al secondo</option>
+            <option value="900">15 minuti al secondo</option>
+            <option value="3600">1 ora al secondo</option>
+          </select>
+        </div>
+        <button id="replay-close" type="button">Torna alla diretta</button>
       </section>
       <p id="updated" class="muted"></p>
     </aside>

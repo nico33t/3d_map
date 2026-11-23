@@ -23,6 +23,10 @@ input[type="search"] { font: inherit; padding: 8px 12px; border-radius: 12px; bo
 #list .meta { color: var(--muted); font-size: 12px; }
 .moving { background: #16a34a; } .stopped { background: #2563eb; } .stale { background: #9ca3af; }
 #selected { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; }
+#replay { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; }
+#replay input[type="date"], #replay select { font: inherit; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+#replay input[type="range"] { width: 100%; accent-color: var(--accent); }
+.clock { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
 #selected-detail { white-space: pre-line; color: var(--muted); font-size: 13px; }
 #error { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #b91c1c; color: #fff; padding: 10px 16px; border-radius: 12px; max-width: calc(100% - 32px); }
 dialog { border: 1px solid var(--line); border-radius: 16px; padding: 24px; max-width: 360px; background: var(--bg); color: var(--fg); display: none; }

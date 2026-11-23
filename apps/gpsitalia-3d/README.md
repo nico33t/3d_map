@@ -39,7 +39,11 @@ pubblicazione e il DNS richiedono una decisione esplicita.
 - **Dati minimi:** il proxy pagina `last-locations` (al massimo 200 righe per richiesta) e lascia passare solo `imei`, `name`, `targa`, posizione, direzione, velocità e orario. Telefono, indirizzo e dati IO non arrivano al browser.
 - `/api/config` consegna il token pubblico Mapbox solo dopo l'accesso: il token non è nel bundle statico.
 
-Il timelapse dello storico arriva nel prossimo passo.
+- **Timelapse:** dal mezzo scelto, «Timelapse del percorso» carica un giorno di storico (al massimo 20.000 punti) e lo riproduce:
+  - modello 3D con la scia;
+  - cursore del tempo e velocità da 1 minuto a 1 ora al secondo;
+  - conteggio delle soste;
+  - nelle interruzioni di registrazione oltre 10 minuti il mezzo aspetta fermo, non viene inventato nessun tragitto.
 
 ## Variabili d'ambiente
 

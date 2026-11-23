@@ -17,7 +17,7 @@ describe('proxyPlatform', () => {
     ['/api/platform/last-locations?page=2&limit=100', 'https://api.example.test/api/last-locations?page=2&limit=100'],
     ['/api/platform/vehicles?limit=1000&offset=0', 'https://api.example.test/api/vehicles?limit=1000&offset=0'],
     [`/api/platform/vehicles/${IMEI}/location`, `https://api.example.test/api/vehicles/${IMEI}/location`],
-    [`/api/platform/vehicles/${IMEI}/history?start=2026-11-22T00:00:00.000Z&end=2026-11-22T23:59:59.999Z&detail=light`, `https://api.example.test/api/vehicles/${IMEI}/history?start=2026-11-22T00%3A00%3A00.000Z&end=2026-11-22T23%3A59%3A59.999Z&detail=light`],
+    [`/api/platform/vehicles/${IMEI}/history?start=2026-11-22T00:00:00.000Z&end=2026-11-22T23:59:59.999Z&detail=light`, `https://api.example.test/api/vehicles/${IMEI}/history?start=2026-11-22T00%3A00%3A00.000Z&end=2026-11-22T23%3A59%3A59.999Z&detail=light&limit=20000`],
   ])('forwards %s with the user token', async (path, upstream) => {
     const { calls, fetcher } = recorder();
     const response = await proxyPlatform(get(path), 'user-jwt', env, fetcher);
@@ -128,5 +128,13 @@ describe('proxyPlatform', () => {
     const response = await proxyPlatform(get('/api/platform/vehicles'), 't', env, fetcher);
     expect(response.status).toBe(401);
     expect(response.headers.get('Set-Cookie')).toMatch(/^map3d_session=;.*Max-Age=0/);
+  });
+
+  it('bounds the history limit to 20000 points', async () => {
+    for (const [query, expected] of [['', '20000'], ['?limit=100000', '20000'], ['?limit=500', '500']] as const) {
+      const { calls, fetcher } = recorder();
+      await proxyPlatform(get(`/api/platform/vehicles/${IMEI}/history${query}`), 't', env, fetcher);
+      expect(new URL(calls[0]!.url).searchParams.get('limit')).toBe(expected);
+    }
   });
 });
