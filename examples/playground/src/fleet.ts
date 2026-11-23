@@ -10,7 +10,7 @@ const storage = createFleetAssignments({
   setItem: (key, value) => localStorage.setItem(key, value),
 });
 export function modelOptions(select: HTMLSelectElement, selected: string) {
-  select.replaceChildren(...catalog.map(model => new Option(`${model.name}${model.style === 'stylized' ? ' · generico' : ''}`, model.id)));
+  select.replaceChildren(...catalog.map(model => new Option(`${model.name}${model.style === 'stylized' ? ' (generico)' : ''}`, model.id)));
   select.value = selected; syncSelect(select);
 }
 export function fleetModel(imei: string) {
@@ -24,15 +24,15 @@ export function saveFleetModel(imei: string, model: string) {
 }
 export function renderFleet(devices: readonly Device[], selected: string, onFollow: (imei: string) => void, onModel: (imei: string, model: string) => void, onColor: (imei: string) => void) {
   const list = document.getElementById('fleet-list')!;
-  document.getElementById('fleet-state')!.textContent = `${devices.length} veicoli accessibili con la chiave attuale.`;
+  document.getElementById('fleet-state')!.textContent = `${devices.length} mezzi accessibili con la chiave attuale.`;
   disposeSelectsWithin(list);
   list.replaceChildren();
   const states: Record<string, string> = { moving: 'In movimento', parked: 'Fermo', offline: 'Offline', unknown: 'Stato sconosciuto' };
   for (const device of devices) {
     const imei = String(device.imei);
     const card = document.createElement('article'); card.className = 'fleet-card';
-    const title = document.createElement('h3'); title.textContent = device.name || 'Veicolo senza nome';
-    const detail = document.createElement('p'); detail.textContent = `${device.plate || 'Targa non disponibile'} · ${states[device.status] ?? 'Stato sconosciuto'}\nIMEI ${imei}`;
+    const title = document.createElement('h3'); title.textContent = device.name || 'Mezzo senza nome';
+    const detail = document.createElement('p'); detail.textContent = `${device.plate || 'Targa non disponibile'}\n${states[device.status] ?? 'Stato sconosciuto'}\nIMEI ${imei}`;
     const label = document.createElement('label'); label.textContent = 'Rappresentazione 3D';
     const select = document.createElement('select'); select.setAttribute('aria-label', `Modello 3D ${device.name || imei}`);
     modelOptions(select, fleetModel(imei).id);
@@ -46,7 +46,7 @@ export function renderFleet(devices: readonly Device[], selected: string, onFoll
       onColor(imei);
     });
     colorLabel.append(colorSelect);
-    const badgeLabel = document.createElement('label'); badgeLabel.textContent = 'Loghi Audi · davanti e dietro';
+    const badgeLabel = document.createElement('label'); badgeLabel.textContent = 'Loghi Audi davanti e dietro';
     const badgeSelect = document.createElement('select'); badgeSelect.setAttribute('aria-label', `Loghi Audi ${device.name || imei}`);
     badgeOptions(badgeSelect, imei, fleetModel(imei));
     badgeSelect.addEventListener('change', () => {
@@ -56,7 +56,7 @@ export function renderFleet(devices: readonly Device[], selected: string, onFoll
     });
     badgeLabel.append(badgeSelect);
     label.append(select);
-    const button = document.createElement('button'); styleFleetButton(button); button.textContent = imei === selected ? 'Segui · selezionato' : 'Segui sulla mappa';
+    const button = document.createElement('button'); styleFleetButton(button); button.textContent = imei === selected ? 'Seguito sulla mappa' : 'Segui sulla mappa';
     button.addEventListener('click', () => onFollow(imei));
     card.append(title, detail, label, colorLabel, badgeLabel, button); list.append(card); mountSelect(select); mountSelect(colorSelect); mountSelect(badgeSelect);
   }

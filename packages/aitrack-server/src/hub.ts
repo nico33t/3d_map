@@ -19,7 +19,7 @@ export function createLocationHub(fetchLocation: (imei: string) => Promise<Locat
     let delay = 15_000;
     try {
       const location = await fetchLocation(imei);
-      if (!Number.isFinite(location.longitude) || Math.abs(location.longitude) > 180 || !Number.isFinite(location.latitude) || Math.abs(location.latitude) > 85.051129 || !Number.isFinite(Date.parse(location.recorded_at))) throw new Error('Posizione Aitrack non valida.');
+      if (!Number.isFinite(location.longitude) || Math.abs(location.longitude) > 180 || !Number.isFinite(location.latitude) || Math.abs(location.latitude) > 85.051129 || !Number.isFinite(Date.parse(location.recorded_at))) throw new Error('Posizione GPS non valida.');
       delay = nextPollDelay(location, watch.last); watch.failures = 0;
       if (!watch.last || Date.parse(location.recorded_at) > Date.parse(watch.last.recorded_at)) {
         watch.last = location;
@@ -28,7 +28,7 @@ export function createLocationHub(fetchLocation: (imei: string) => Promise<Locat
     } catch {
       watch.failures++;
       delay = Math.min(120_000, 15_000 * 2 ** Math.min(watch.failures, 3));
-      for (const listener of watch.listeners) listener({ type: 'problem', data: { message: 'Aitrack non disponibile. Riconnessione automatica…' } });
+      for (const listener of watch.listeners) listener({ type: 'problem', data: { message: 'Servizio GPS non disponibile. Riconnessione automatica…' } });
     } finally {
       watch.busy = false;
       if (!stopped && watches.get(imei) === watch && watch.listeners.size) watch.timer = setTimeout(() => void refresh(imei, watch), delay);

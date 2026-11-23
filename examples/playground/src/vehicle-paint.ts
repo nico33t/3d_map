@@ -15,7 +15,7 @@ export function saveVehicleColor(owner: string, model: VehicleAsset, color: stri
   try { localStorage.setItem(key, value); return true; } catch { return false; }
 }
 export function colorOptions(select: HTMLSelectElement, owner: string, model: VehicleAsset) {
-  select.replaceChildren(...(model.paint ? vehicleColors.map(c => new Option(c.name, c.id)) : [new Option('Non disponibile · colore originale', 'original')]));
+  select.replaceChildren(...(model.paint ? vehicleColors.map(c => new Option(c.name, c.id)) : [new Option('Non disponibile, colore originale', 'original')]));
   select.disabled = !model.paint;
   select.value = vehicleColor(owner, model);
   syncSelect(select);

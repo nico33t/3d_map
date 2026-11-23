@@ -14,7 +14,7 @@ export async function refreshDeviceSelector(
     const devices = [];
     for (let offset = 0; ; offset += 200) {
       const response = await client.listDevices({ limit: 200, offset }, signal);
-      if (!Array.isArray(response.data)) throw new Error('Elenco dispositivi Aitrack non valido.');
+      if (!Array.isArray(response.data)) throw new Error('Elenco dispositivi non valido.');
       devices.push(...response.data);
       if (response.data.length < 200) break;
       if (devices.length >= 10_000) throw new Error('Elenco troppo esteso per il playground.');
@@ -24,13 +24,13 @@ export async function refreshDeviceSelector(
     const available = devices.some(device => String(device.imei) === requested);
     select.replaceChildren();
     if (!available) {
-      const missing = new Option(`${requested} · non accessibile`, requested, true, true);
+      const missing = new Option(`${requested} (non accessibile)`, requested, true, true);
       missing.disabled = true;
       select.add(missing);
     }
     for (const device of devices) {
       const imei = String(device.imei);
-      select.add(new Option(`${device.name || 'Dispositivo'}${device.plate ? ` · ${device.plate}` : ''}`, imei, false, imei === requested));
+      select.add(new Option(`${device.name || 'Dispositivo'}${device.plate ? ` (${device.plate})` : ''}`, imei, false, imei === requested));
     }
     select.value = requested;
     select.disabled = devices.length === 0;
@@ -39,6 +39,6 @@ export async function refreshDeviceSelector(
       : `L’IMEI richiesto non compare tra i ${devices.length} dispositivi accessibili. Seleziona un dispositivo dall’elenco oppure usa la chiave dell’account corretto.`;
     return devices;
   } catch (error) {
-    if (!signal.aborted) state.textContent = error instanceof Error ? error.message : 'Impossibile leggere i dispositivi Aitrack.';
+    if (!signal.aborted) state.textContent = error instanceof Error ? error.message : 'Impossibile leggere i dispositivi.';
   }
 }

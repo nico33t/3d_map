@@ -15,7 +15,7 @@ export function watchAitrackLive(imei: string, handlers: { onLocation: (location
   const stream = new EventSource(`/api/aitrack/live?device=${encodeURIComponent(imei)}`);
   stream.addEventListener('open', () => { failures = 0; fallback?.(); fallback = undefined; });
   stream.addEventListener('location', event => { try { deliver(JSON.parse((event as MessageEvent).data)); } catch { handlers.onError?.(new Error('Dato live non valido.')); } });
-  stream.addEventListener('problem', () => handlers.onError?.(new AitrackError('Aitrack non disponibile. Riconnessione automatica…', 502, 'UPSTREAM_UNAVAILABLE')));
+  stream.addEventListener('problem', () => handlers.onError?.(new AitrackError('Servizio GPS non disponibile. Riconnessione automatica…', 502, 'UPSTREAM_UNAVAILABLE')));
   stream.addEventListener('error', () => {
     if (stopped) return;
     failures++;

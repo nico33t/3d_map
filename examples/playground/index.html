@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Map</title>
+    <title>Mappa 3D GPS Italia</title>
     <link rel="manifest" href="/app.webmanifest">
     <link rel="icon" href="/app-icon.svg">
     <meta name="theme-color" content="#000000">
@@ -11,27 +11,27 @@
   <body class="panel-open">
     <button id="toggle-panel" type="button" aria-expanded="true" aria-controls="drive-panel">Chiudi pannello</button>
     <main id="map" aria-label="Mappa interattiva"></main>
-    <section id="drive-panel" class="drive-panel" aria-label="Controlli veicolo">
+    <section id="drive-panel" class="drive-panel" aria-label="Controlli mezzo">
       <button id="close-panel" type="button" aria-label="Chiudi controlli">×</button>
-      <p hidden class="eyebrow" id="mode-label">Aitrack · Live</p>
-      <h1 id="vehicle-title">Il mio veicolo</h1>
+      <p hidden class="eyebrow" id="mode-label">GPS Italia in diretta</p>
+      <h1 id="vehicle-title">Il mio mezzo</h1>
       <p hidden class="subtitle" id="vehicle-description">Posizione e scia del dispositivo configurato localmente.</p>
       <label class="control-label" for="data-source">Sorgente posizione</label>
-      <select id="data-source"><option value="live">Aitrack · veicolo reale</option><option value="demo">Simulazione · Roma</option></select>
+      <select id="data-source"><option value="live">GPS Italia, mezzo reale</option><option value="demo">Simulazione a Roma</option></select>
       <div id="device-controls">
-        <label class="control-label" for="device-select">Dispositivo Aitrack</label>
+        <label class="control-label" for="device-select">Dispositivo GPS Italia</label>
         <select id="device-select" disabled><option>Caricamento dispositivi…</option></select>
         <p hidden id="device-state" class="simulation-note" role="status"></p>
         <button id="refresh-devices" class="follow" type="button">Aggiorna dispositivi</button>
       </div>
-      <button id="open-cameras" class="follow" type="button">Telecamere · RTSP</button>
-      <button id="open-system" class="follow" type="button">Connessione Aitrack</button>
-      <button id="open-fleet" class="follow" type="button">Il mio parco auto</button>
-      <label class="control-label" for="vehicle-model">Modello 3D del veicolo</label>
+      <button id="open-cameras" class="follow" type="button">Telecamere RTSP</button>
+      <button id="open-system" class="follow" type="button">Connessione GPS Italia</button>
+      <button id="open-fleet" class="follow" type="button">I miei mezzi</button>
+      <label class="control-label" for="vehicle-model">Modello 3D del mezzo</label>
       <select id="vehicle-model"></select>
       <label class="control-label" for="vehicle-color">Colore carrozzeria</label>
       <select id="vehicle-color"></select>
-      <label class="control-label" for="vehicle-badges">Loghi Audi · davanti e dietro</label>
+      <label class="control-label" for="vehicle-badges">Loghi Audi davanti e dietro</label>
       <select id="vehicle-badges"></select>
       <div class="metrics">
         <div><strong id="speed">0</strong><span>km/h</span></div>
@@ -42,12 +42,12 @@
         <button id="pause" type="button" disabled>Pausa</button>
         <button id="reset" type="button" disabled>Ricomincia</button>
       </div>
-      <button id="follow" class="follow" type="button" aria-pressed="true" disabled>Segui veicolo</button>
+      <button id="follow" class="follow" type="button" aria-pressed="true" disabled>Segui mezzo</button>
       <div class="controls">
         <button id="toggle-areas" type="button" aria-pressed="true" disabled>Aree 3D</button>
         <button id="frame-areas" type="button" disabled>Vai alle aree</button>
       </div>
-      <p class="simulation-note" id="areas-state" role="status">Caricamento aree Aitrack…</p>
+      <p class="simulation-note" id="areas-state" role="status">Caricamento aree…</p>
       <p class="simulation-note" id="data-time">In attesa della prima posizione…</p>
       <div class="environment" aria-label="Tipo di mappa">
         <button id="standard-map" type="button" aria-pressed="true" disabled>Standard 3D</button>
@@ -66,17 +66,17 @@
     <p hidden id="status" role="status" aria-live="polite">Preparazione della mappa…</p>
     <aside class="asset-credit" id="asset-credit"></aside>
     <dialog id="fleet-dialog" aria-labelledby="fleet-title">
-      <div class="fleet-heading"><h2 id="fleet-title">Il mio parco auto</h2><button id="close-fleet" type="button">Chiudi</button></div>
-      <p>Veicoli del tuo account Aitrack. Scegli il modello e il veicolo da seguire sulla mappa.</p>
-      <p id="fleet-state" role="status">Caricamento del parco auto…</p>
+      <div class="fleet-heading"><h2 id="fleet-title">I miei mezzi</h2><button id="close-fleet" type="button">Chiudi</button></div>
+      <p>Mezzi del tuo account GPS Italia. Scegli il modello e il mezzo da seguire sulla mappa.</p>
+      <p id="fleet-state" role="status">Caricamento dei mezzi…</p>
       <div id="fleet-list"></div>
       <p id="fleet-save-state">Associazioni salvate solo in questo browser. I modelli Kenney sono rappresentazioni generiche.</p>
     </dialog>
     <aside id="camera-dock" aria-label="Telecamere in diretta" hidden></aside>
     <dialog id="camera-dialog" aria-labelledby="camera-title">
-      <div class="fleet-heading"><h2 id="camera-title">Telecamere · RTSP</h2><button id="close-cameras" type="button">Chiudi</button></div>
+      <div class="fleet-heading"><h2 id="camera-title">Telecamere RTSP</h2><button id="close-cameras" type="button">Chiudi</button></div>
       <label><input type="checkbox" id="camera-enabled"> Attiva integrazione RTSP</label>
-      <p>Le telecamere vicine al veicolo appaiono in basso a sinistra. Puoi anche cercarle e aprirle sulla mappa. Massimo 3 video contemporanei.</p>
+      <p>Le telecamere vicine al mezzo appaiono in basso a sinistra. Puoi anche cercarle e aprirle sulla mappa. Massimo 3 video contemporanei.</p>
       <label class="control-label" for="camera-search">Cerca le tue telecamere</label><input id="camera-search" type="search" placeholder="Nome telecamera">
       <div id="camera-list"></div>
       <details><summary>Aggiungi telecamera</summary>
@@ -93,11 +93,11 @@
       <p id="camera-state" role="status">I flussi RTSP vengono convertiti in HLS con un ritardo di alcuni secondi.</p>
     </dialog>
     <dialog id="system-dialog" aria-labelledby="system-title">
-      <div class="fleet-heading"><h2 id="system-title">Connessione Aitrack</h2><button id="close-system" type="button">Chiudi</button></div>
+      <div class="fleet-heading"><h2 id="system-title">Connessione GPS Italia</h2><button id="close-system" type="button">Chiudi</button></div>
       <p id="system-state" role="status"></p>
-      <label for="webhook-url">Endpoint da registrare nel pannello Aitrack</label><input id="webhook-url" readonly>
+      <label for="webhook-url">Endpoint da registrare nel pannello GPS Italia</label><input id="webhook-url" readonly>
       <p>Seleziona gli eventi desiderati e retry esponenziale. Il tunnel temporaneo cambia indirizzo dopo un riavvio: aggiorna l’endpoint nel pannello. Gli eventi anticipano il controllo GPS; il controllo adattivo rimane attivo.</p>
-      <label for="webhook-secret">Secret della firma configurato in Aitrack</label><input id="webhook-secret" type="password" autocomplete="new-password">
+      <label for="webhook-secret">Secret della firma configurato in GPS Italia</label><input id="webhook-secret" type="password" autocomplete="new-password">
       <button id="save-webhook" type="button">Salva secret sul server</button>
       <p id="webhook-save-state" role="status"></p>
     </dialog>

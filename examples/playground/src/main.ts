@@ -80,14 +80,14 @@ async function start() {
     const updateIdentity = () => {
       const model = activeModel();
       const device = devices.find(device => String(device.imei) === imei);
-      element('vehicle-title').textContent = mode === 'demo' ? model.name : device?.name || 'Veicolo Aitrack';
+      element('vehicle-title').textContent = mode === 'demo' ? model.name : device?.name || 'Mezzo GPS Italia';
       modelOptions(modelSelect, model.id);
       colorOptions(colorSelect, colorOwner(), model);
       badgeOptions(badgeSelect, colorOwner(), model);
       const credit = element('asset-credit');
       const author = document.createElement('a'); author.href = model.sourceUrl; author.target = '_blank'; author.rel = 'noreferrer'; author.textContent = model.id === audiA1.id ? 'Car2022' : model.author;
       const license = document.createElement('a'); license.href = model.licenseUrl; license.target = '_blank'; license.rel = 'noreferrer'; license.textContent = model.license;
-      credit.replaceChildren('Modello: ', author, ' · ', license, model.attribution ? ' · modello modificato' : ' · generico');
+      credit.replaceChildren('Modello: ', author, ', ', license, model.attribution ? ', modello modificato' : ', generico');
     };
     let mode: 'live' | 'demo' = 'live';
     let playing = true;
@@ -102,7 +102,7 @@ async function start() {
     const liveMotion = createVehicleMotion();
     let liveController: AbortController | undefined;
     let stopPolling: (() => void) | undefined;
-    const cameras = mountCameras(map, lifetime.signal, () => { following = false; follow.setAttribute('aria-pressed', 'false'); follow.textContent = 'Segui veicolo'; });
+    const cameras = mountCameras(map, lifetime.signal, () => { following = false; follow.setAttribute('aria-pressed', 'false'); follow.textContent = 'Segui mezzo'; });
     mountAreas(map, client, lifetime.signal, () => { following = false; setControlPressed('follow', false); follow.textContent = 'Camera libera'; });
     const render = (position: Coordinates, heading: number, trail: readonly Coordinates[]) => {
       cameras.updatePosition(position);
@@ -144,7 +144,7 @@ async function start() {
     const updateTime = () => {
       if (mode !== 'live' || !lastLocation) return;
       const stale = Date.now() - Date.parse(lastLocation.recorded_at) > 120_000;
-      timeLabel.textContent = `${stale ? 'Posizione non recente · ' : 'Ultimo dato · '}${new Date(lastLocation.recorded_at).toLocaleString('it-IT')}`;
+      timeLabel.textContent = `${stale ? 'Posizione non recente: ' : 'Ultimo dato: '}${new Date(lastLocation.recorded_at).toLocaleString('it-IT')}`;
     };
     const onLocation = (location: Location) => {
       if (mode !== 'live' || !playing) return;
@@ -173,7 +173,7 @@ async function start() {
       render(pose, pose.heading, liveTrail);
       speed.textContent = Number.isFinite(location.speed_kmh) ? Math.round(location.speed_kmh).toString() : '—';
       distance.textContent = liveTrail.length.toString();
-      status.textContent = `Aitrack collegato · dispositivo ${imei} · sincronizzazione automatica`;
+      status.textContent = `GPS Italia collegato, dispositivo ${imei}, sincronizzazione automatica`;
       updateTime();
     };
     const beginLivePolling = () => {
@@ -183,10 +183,10 @@ async function start() {
         onError(error) {
           if (error instanceof AitrackError && error.code === 'DEVICE_NOT_FOUND') {
             playing = false; pause.textContent = 'Riprova';
-            status.textContent = `Aitrack: il dispositivo ${imei} non è accessibile con questa chiave. Controlla l’elenco dei dispositivi.`;
+            status.textContent = `Il dispositivo ${imei} non è accessibile con questa chiave. Controlla l’elenco dei dispositivi.`;
             timeLabel.textContent = 'Nessuna posizione disponibile per questo dispositivo.';
           } else {
-            status.textContent = error instanceof Error ? error.message : 'Aitrack non raggiungibile.';
+            status.textContent = error instanceof Error ? error.message : 'GPS Italia non raggiungibile.';
           }
         },
       }, { signal: liveController!.signal });
@@ -202,16 +202,16 @@ async function start() {
       speed.textContent = '—'; distance.textContent = '0';
       progress.hidden = mode === 'live';
       element('device-controls').hidden = mode !== 'live';
-      element('mode-label').textContent = mode === 'live' ? 'Aitrack · Live' : 'DRIVE SIMULATION';
-      element('vehicle-description').textContent = mode === 'live' ? `Dispositivo ${imei} · GPS reale, movimento interpolato.` : 'Un giro tra i Fori Imperiali. La scia racconta il percorso.';
+      element('mode-label').textContent = mode === 'live' ? 'GPS Italia in diretta' : 'Simulazione';
+      element('vehicle-description').textContent = mode === 'live' ? `Dispositivo ${imei}, GPS reale, movimento interpolato.` : 'Un giro tra i Fori Imperiali. La scia racconta il percorso.';
       element('distance-label').textContent = mode === 'live' ? 'punti nella scia' : 'metri percorsi';
       reset.textContent = mode === 'live' ? 'Pulisci scia' : 'Ricomincia';
       pause.textContent = mode === 'live' ? 'Sospendi' : 'Pausa';
       if (mode === 'demo') {
-        timeLabel.textContent = 'Percorso dimostrativo · nessun GPS reale';
-        status.textContent = 'Veicolo in movimento · simulazione'; drawDemo(); return;
+        timeLabel.textContent = 'Percorso dimostrativo, nessun GPS reale';
+        status.textContent = 'Mezzo in movimento (simulazione)'; drawDemo(); return;
       }
-      status.textContent = 'Connessione ad Aitrack…';
+      status.textContent = 'Connessione a GPS Italia…';
       timeLabel.textContent = 'In attesa della prima posizione…';
       liveController = new AbortController();
       const active = liveController;
@@ -289,7 +289,7 @@ async function start() {
     };
     deviceSelect.addEventListener('change', () => {
       imei = deviceSelect.value;
-      element('device-state').textContent = 'Dispositivo selezionato dall’elenco Aitrack.';
+      element('device-state').textContent = 'Dispositivo selezionato dall’elenco.';
       void switchMode();
     }, { signal: lifetime.signal });
     element('refresh-devices').addEventListener('click', () => { refreshDevices(); void switchMode(); }, { signal: lifetime.signal });
@@ -300,8 +300,8 @@ async function start() {
       pause.textContent = playing ? (mode === 'live' ? 'Sospendi' : 'Pausa') : 'Riprendi';
       if (mode === 'live') {
         if (playing) beginLivePolling(); else stopPolling?.();
-        status.textContent = playing ? 'Ripresa aggiornamenti Aitrack…' : 'Aggiornamenti Aitrack sospesi';
-      } else { status.textContent = playing ? 'Veicolo in movimento · simulazione' : 'Simulazione in pausa'; drawDemo(); }
+        status.textContent = playing ? 'Ripresa aggiornamenti…' : 'Aggiornamenti sospesi';
+      } else { status.textContent = playing ? 'Mezzo in movimento (simulazione)' : 'Simulazione in pausa'; drawDemo(); }
     }, { signal: lifetime.signal });
     reset.addEventListener('click', () => {
       if (mode === 'live') {
@@ -310,13 +310,13 @@ async function start() {
         distance.textContent = liveTrail.length.toString();
       } else {
         traveled = 0; playing = true; previous = performance.now(); pause.disabled = false; pause.textContent = 'Pausa';
-        status.textContent = 'Veicolo in movimento · simulazione'; drawDemo();
+        status.textContent = 'Mezzo in movimento (simulazione)'; drawDemo();
       }
     }, { signal: lifetime.signal });
     follow.addEventListener('click', () => {
       following = !following;
       follow.setAttribute('aria-pressed', String(following));
-      follow.textContent = following ? 'Segui veicolo' : 'Camera libera';
+      follow.textContent = following ? 'Segui mezzo' : 'Camera libera';
       if (following && currentPosition) map.setCamera({ ...camera, center: currentPosition });
     }, { signal: lifetime.signal });
     let rainy = false;
@@ -359,7 +359,7 @@ async function start() {
         try {
           await setMapboxBasemap(map, target, lifetime.signal);
           basemap = target; ready = true;
-          status.textContent = target === 'hybrid' ? 'Ibrida 3D · satellite, strade ed edifici' : 'Mappa standard 3D';
+          status.textContent = target === 'hybrid' ? 'Ibrida 3D: satellite, strade ed edifici' : 'Mappa standard 3D';
         } catch (error) {
           if (lifetime.signal.aborted) return;
           status.textContent = 'Cambio mappa non riuscito. Ripristino della vista precedente…';

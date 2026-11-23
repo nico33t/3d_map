@@ -81,7 +81,7 @@ export function mountCameras(map: MapSession, signal: AbortSignal, browse: () =>
                 if (disposed)
                     return;
                 if (!stream.ready) {
-                    note.textContent = stream.message || 'In attesa del flusso · nuovo tentativo automatico';
+                    note.textContent = stream.message || 'In attesa del flusso, nuovo tentativo automatico';
                     reconnect.retry();
                     return;
                 }
@@ -97,7 +97,7 @@ export function mountCameras(map: MapSession, signal: AbortSignal, browse: () =>
                     hls.loadSource(stream.url);
                     hls.attachMedia(video);
                     hls.on(Hls.Events.ERROR, (_event, data) => { if (data.fatal && !disposed) {
-                        note.textContent = 'Flusso interrotto · riconnessione…';
+                        note.textContent = 'Flusso interrotto, riconnessione…';
                         reconnect.retry();
                     } });
                 }
@@ -111,9 +111,9 @@ export function mountCameras(map: MapSession, signal: AbortSignal, browse: () =>
                 }
             }
         });
-        video.onplaying = () => { reconnect.healthy(); stalled = 0; note.textContent = 'Video in diretta · ritardo di alcuni secondi'; };
+        video.onplaying = () => { reconnect.healthy(); stalled = 0; note.textContent = 'Video in diretta, ritardo di alcuni secondi'; };
         video.onerror = () => { if (!disposed) {
-            note.textContent = 'Flusso interrotto · riconnessione…';
+            note.textContent = 'Flusso interrotto, riconnessione…';
             reconnect.retry();
         } };
         const health = setInterval(() => { if (video.paused || disposed)

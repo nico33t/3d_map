@@ -140,7 +140,7 @@ La web app ha manifest e modalità standalone; in Safari si può usare
 **File → Aggiungi al Dock**. Non richiede Electron. Il service worker non memorizza
 GPS, API o video; serve una connessione al server locale.
 
-Da **Connessione Aitrack** copia l’endpoint nel pannello Aitrack e inserisci il
+Da **Connessione GPS Italia** copia l’endpoint nel pannello della piattaforma e inserisci il
 secret di firma nello stesso pannello dell’app. È salvato nel `.env` ignorato da
 Git, mai restituito dal server. Abilita gli eventi desiderati e retry esponenziale.
 Non è documentata un’API di registrazione: questo passaggio rimane manuale.
@@ -163,7 +163,7 @@ metadati, distanze e selezione per prossimità; `@3d-map/rtsp/server` esporta il
 servizio Node con persistenza locale e conversione FFmpeg. Richiede `ffmpeg`
 con encoder `libx264` nel PATH; non scarica programmi all’avvio.
 
-Apri **Telecamere · RTSP**, attiva l’integrazione e aggiungi nome, URL RTSP completo,
+Apri **Telecamere RTSP**, attiva l’integrazione e aggiungi nome, URL RTSP completo,
 coordinate e raggio (10–10000 metri). Puoi usare il centro corrente della mappa.
 Puoi disattivare ogni telecamera singolarmente, cercare per nome e aprirla tramite
 l’elenco o il suo segnaposto. Le telecamere vicine alla posizione visualizzata del

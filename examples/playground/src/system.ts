@@ -6,7 +6,7 @@ export function mountSystem(signal: AbortSignal) {
         if (!r.ok)
             throw Error();
         const s = await r.json();
-        el('system-state').textContent = `GPS: ${s.apiConfigured ? 'configurato' : 'chiave mancante'} · Webhook: ${s.webhookConfigured ? 'secret configurato' : 'secret da configurare'}${s.lastWebhook ? ' · Ultima consegna: ' + new Date(s.lastWebhook).toLocaleString('it-IT') : ''}`;
+        el('system-state').textContent = `GPS: ${s.apiConfigured ? 'configurato' : 'chiave mancante'}. Webhook: ${s.webhookConfigured ? 'secret configurato' : 'secret da configurare'}${s.lastWebhook ? '. Ultima consegna: ' + new Date(s.lastWebhook).toLocaleString('it-IT') : ''}`;
         el<HTMLInputElement>('webhook-url').value = s.webhookUrl ?? 'Avvia con npm start per attivare il tunnel';
     }
     catch {

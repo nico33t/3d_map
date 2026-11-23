@@ -77,7 +77,7 @@ export function createAitrackClient(options: ClientOptions = {}) {
     const abort = () => controller.abort(signal?.reason);
     signal?.throwIfAborted();
     signal?.addEventListener('abort', abort, { once: true });
-    const timer = setTimeout(() => controller.abort(new Error('Aitrack request timed out.')), timeoutMs);
+    const timer = setTimeout(() => controller.abort(new Error('Servizio GPS: tempo di risposta scaduto.')), timeoutMs);
     try {
       const response = await fetcher(`${root}${path}${params.size ? `?${params}` : ''}`, {
         method: 'GET', headers: { Accept: 'application/json', ...(options.apiKey ? { 'X-API-Key': options.apiKey } : {}) },
@@ -86,11 +86,11 @@ export function createAitrackClient(options: ClientOptions = {}) {
       const body: unknown = await response.json().catch(() => null);
       if (!response.ok) {
         const error = body && typeof body === 'object' && 'error' in body ? body.error : null;
-        const message = typeof error === 'string' ? error : error && typeof error === 'object' && 'message' in error ? String(error.message) : `Aitrack HTTP ${response.status}`;
+        const message = typeof error === 'string' ? error : error && typeof error === 'object' && 'message' in error ? String(error.message) : `Servizio GPS: errore HTTP ${response.status}`;
         const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : `HTTP_${response.status}`;
         throw new AitrackError(message, response.status, code);
       }
-      if (!body || typeof body !== 'object' || !('data' in body)) throw new AitrackError('Invalid Aitrack response envelope.', response.status, 'INVALID_RESPONSE');
+      if (!body || typeof body !== 'object' || !('data' in body)) throw new AitrackError('Risposta del servizio GPS non valida.', response.status, 'INVALID_RESPONSE');
       return body as ApiResponse<T>;
     } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
   }
@@ -113,7 +113,7 @@ export function createAitrackClient(options: ClientOptions = {}) {
       const all: Area[] = [];
       for (let offset = 0; offset < 5000; offset += 200) {
         const { data } = await request<Area[]>('/areas', { limit: 200, offset }, signal, areasBase);
-        if (!Array.isArray(data)) throw new AitrackError('Invalid Aitrack areas response.', 200, 'INVALID_RESPONSE');
+        if (!Array.isArray(data)) throw new AitrackError('Elenco aree del servizio GPS non valido.', 200, 'INVALID_RESPONSE');
         all.push(...data);
         if (data.length < 200) break;
       }

@@ -31,7 +31,7 @@ export function mountAreas(map: MapSession, client: ReturnType<typeof createAitr
     if (signal.aborted) return;
     areas = result;
     walls.update(areaWalls(areas), areaFootprints(areas));
-    state.textContent = areas.length ? `${areas.length} ${areas.length === 1 ? 'area' : 'aree'} Aitrack · API v3 beta` : 'Nessuna area Aitrack configurata.';
+    state.textContent = areas.length ? `${areas.length} ${areas.length === 1 ? 'area' : 'aree'} (API v3 beta)` : 'Nessuna area configurata.';
     setControlDisabled('toggle-areas', !areas.length);
     setControlDisabled('frame-areas', !areas.length);
   }).catch(error => {

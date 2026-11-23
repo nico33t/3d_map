@@ -6,6 +6,18 @@ su npm, una release GitHub o il cambio di visibilità della repository.
 
 ## Non rilasciato
 
+### Testi dell'interfaccia
+
+- Testi visibili del playground con il marchio GPS Italia e il termine «mezzo»;
+  titolo e manifest «Mappa 3D GPS Italia». Separatori «·» sostituiti da
+  virgole, parentesi o due punti.
+- Messaggi d'errore mostrati all'utente dai pacchetti `@3d-map/aitrack` e
+  `@3d-map/aitrack-server` resi neutri («Servizio GPS…»).
+- README: nomi dei pulsanti aggiornati («Connessione GPS Italia», «Telecamere RTSP»).
+- Identificatori tecnici invariati per compatibilità: nomi dei pacchetti,
+  `AitrackError`, `createAitrackClient`, variabili `VITE_AITRACK_*`, intestazioni
+  `X-Aitrack-*` dei webhook e indirizzo dell'API.
+
 ### 0.2.0 — in preparazione
 
 - Aree Aitrack (geofence) in 3D: `listAreas`, `getArea` e `listAllAreas` in

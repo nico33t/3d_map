@@ -84,7 +84,7 @@ export function createAitrackGateway(options: { apiKey: string; webhookSecret: s
     if (url.pathname === '/api/aitrack/live') {
       const imei = url.searchParams.get('device') ?? '';
       if (!/^\d{10,20}$/.test(imei)) return json(res, 400, { error: 'Invalid IMEI' });
-      if (!options.apiKey) return json(res, 503, { error: 'Missing Aitrack API key' });
+      if (!options.apiKey) return json(res, 503, { error: 'Chiave API del servizio GPS mancante' });
       if (streams.size >= 20) return json(res, 429, { error: 'Too many live connections' });
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
       res.write('retry: 3000\n\n'); streams.add(res);
@@ -95,7 +95,7 @@ export function createAitrackGateway(options: { apiKey: string; webhookSecret: s
     const path = url.pathname.slice('/api/aitrack'.length);
     if (!url.pathname.startsWith('/api/aitrack/') || !/^\/(devices(?:\/nearest|\/\d{10,20}(?:\/(?:location|history|commands))?)?|events|areas(?:\/[1-9]\d{0,15})?)$/.test(path)) return json(res, 404, { error: 'Not found' });
     try { const result = await upstream(`${path}${url.search}`); if (!res.destroyed) { res.writeHead(result.status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(result.body); } }
-    catch { if (!res.destroyed) json(res, 502, { error: 'Aitrack non raggiungibile.' }); }
+    catch { if (!res.destroyed) json(res, 502, { error: 'Servizio GPS non raggiungibile.' }); }
   };
   return { local, webhook, close() { lifetime.abort(); hub.close(); for (const stream of streams) stream.end(); streams.clear(); } };
 }
