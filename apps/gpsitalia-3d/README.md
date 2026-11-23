@@ -53,3 +53,9 @@ npm test                         # dalla radice: include i test dell'app
 ```
 
 Richiede `wrangler` installato.
+
+## Prova contro la piattaforma (sola lettura)
+
+`scripts/prova-piattaforma.sh` controlla che la piattaforma accetti le richieste
+del proxy (token Bearer, nessuna intestazione Origin). Legge il token di nascosto,
+non lo salva né lo stampa, e mostra solo stato HTTP e numero di elementi.
