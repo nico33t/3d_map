@@ -51,6 +51,14 @@ su npm, una release GitHub o il cambio di visibilità della repository.
   - il mezzo scelto si aggiorna a parte ogni 10 s con la lettura della posizione singola;
   - con 2.000 mezzi si passa da 20 a 11 letture al minuto per scheda, di cui solo 5 pesanti.
 - Rinnovo orario del token senza perdere il lavoro: 3 minuti prima della scadenza la pagina passa da auth (che non permette iframe) e al ritorno ripristina mezzo scelto, vista, tipo di mappa, ricerca e timelapse. Il refresh token non viene mai toccato.
+- Moduli su attivazione, fuori da ogni piano: spenti per tutti finché non vengono accesi lato server, per ruolo o per utente (`MODULO_VIDEO="role:creator"` oppure `"id:42"`). La decisione arriva dal token verificato, `/api/session` la riporta in `modules`, e il codice del modulo (`/assets/modulo-video-*`) viene servito solo agli utenti abilitati. Aprire la mappa ad altri ruoli con `ALLOWED_ROLES` non accende i moduli.
+- Modulo «video»: esporta il timelapse aperto come file video, creato nel browser senza server.
+  - formato orizzontale 1920 × 1080, verticale 1080 × 1920 o quadrato 1080 × 1080;
+  - durata 30 secondi, 1 o 2 minuti, con la giornata compressa di conseguenza;
+  - inquadratura che segue il mezzo o sul percorso intero;
+  - scritte facoltative: nome del mezzo, orario e data, velocità; targa spenta di base; marchio GPS Italia e attribuzione Mapbox e OpenStreetMap sempre presenti;
+  - MP4 (H.264) dove il browser lo registra, altrimenti WebM;
+  - registrazione in tempo reale: se la scheda viene nascosta, annullata o chiusa si interrompe senza offrire file parziali, e durante la registrazione il rinnovo del token aspetta la fine.
 
 ### Testi dell'interfaccia
 

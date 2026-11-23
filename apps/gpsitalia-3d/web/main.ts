@@ -6,6 +6,7 @@ import { renewDelayMs, saveResume, takeResume, type ResumeState } from '../src/r
 import { sessionWorked, shouldAutoRelogin } from '../src/relogin';
 import { dayRange, findStops, normalizeHistory, poseAt, trailUntil, type TrackPoint } from '../src/timelapse';
 import { createInactivityWatch, DEFAULT_COUNTDOWN_MS } from '../src/inactivity';
+import { routeCamera } from '../src/video';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './style.css';
 
@@ -63,13 +64,15 @@ const stateText: Record<LiveVehicle['state'], string> = { moving: 'In movimento'
 async function start() {
   let config: { mapboxToken: string; appUrl: string; authUrl: string };
   let expiresAt = Number.NaN;
+  let videoModule = false;
   const resume = takeResume(storage);
   try {
     const body = await getJson('/api/config', lifetime.signal) as { data?: { mapboxToken?: string; appUrl?: string; authUrl?: string } };
     if (!body.data?.mapboxToken) throw new Error('Mappa non configurata.');
     config = { mapboxToken: body.data.mapboxToken, appUrl: body.data.appUrl ?? 'https://app.gpsitalia.com', authUrl: body.data.authUrl ?? 'https://auth.gpsitalia.com' };
-    const session = await getJson('/api/session', lifetime.signal) as { data?: { expiresAt?: string } };
+    const session = await getJson('/api/session', lifetime.signal) as { data?: { expiresAt?: string; modules?: { video?: boolean } } };
     expiresAt = Date.parse(session.data?.expiresAt ?? '');
+    videoModule = session.data?.modules?.video === true;
   } catch (error) {
     if (error instanceof SessionExpired) { sessionEnded(); return; }
     summary.textContent = 'Mappa non disponibile. Riprova più tardi.';
@@ -200,6 +203,47 @@ async function start() {
   }, { signal: lifetime.signal });
   el('replay-close').addEventListener('click', closeReplay, { signal: lifetime.signal });
 
+  // Module «video» (only when the server switched it on): the code is fetched on first use.
+  let recording = false;
+  const videoOpen = el<HTMLButtonElement>('video-open');
+  videoOpen.hidden = !videoModule;
+  if (videoModule) videoOpen.addEventListener('click', async () => {
+    if (!replay || !selected || recording) return;
+    const v = vehicles.find(x => x.imei === selected);
+    const canvas = el('map').querySelector<HTMLCanvasElement>('canvas.mapboxgl-canvas');
+    if (!canvas) return;
+    videoOpen.disabled = true;
+    let mod: typeof import('./modulo-video');
+    try { mod = await import('./modulo-video'); }
+    catch { showError('Esportazione video non disponibile. Ricarica la pagina.'); videoOpen.disabled = false; return; }
+    setPlaying(false);
+    const before = { t: replay.t, following };
+    const current = replay;
+    await mod.openVideoExport({
+      mapCanvas: canvas, name: v?.name ?? 'Mezzo', plate: v?.plate ?? '', day: replayDay.value,
+      from: current.from, to: current.to, signal: lifetime.signal,
+      seek: (t, follow) => {
+        if (replay !== current) return 0;
+        following = follow;
+        replay.t = t;
+        drawReplay();
+        return poseAt(replay.points, t)?.speedKmh ?? 0;
+      },
+      frameRoute: () => { const camera = routeCamera(current.points); if (camera) map.setCamera(camera); },
+      keepAlive: () => idle.activity(),
+      setBusy: busy => {
+        recording = busy;
+        for (const id of ['replay-play', 'replay-time', 'replay-day', 'replay-close', 'replay-speed']) el<HTMLButtonElement>(id).disabled = busy;
+        if (!busy && renewPending && !document.hidden) renewNow();
+      },
+    });
+    videoOpen.disabled = false;
+    if (replay === current) {
+      following = before.following; el('follow').setAttribute('aria-pressed', String(following));
+      replay.t = before.t; drawReplay();
+    }
+  }, { signal: lifetime.signal });
+
   const renderList = () => {
     const query = search.value.trim().toLowerCase();
     const filtered = (query ? vehicles.filter(v => v.name.toLowerCase().includes(query) || v.plate.toLowerCase().includes(query) || v.imei.includes(query)) : vehicles)
@@ -247,6 +291,7 @@ async function start() {
 
   function select(imei: string | null) {
     idle.activity();
+    if (recording) return;
     if (imei === selected) return;
     if (replay || !el('replay').hidden) { replayController?.abort(); replay = null; el('replay').hidden = true; }
     clearCar();
@@ -377,7 +422,8 @@ async function start() {
   let renewPending = false;
   const renewNow = () => {
     if (lifetime.signal.aborted) return;
-    if (document.hidden) { renewPending = true; return; }
+    // Never navigate away in the middle of a video: renew right after it.
+    if (document.hidden || recording) { renewPending = true; return; }
     const camera = map.getCamera();
     const state: ResumeState = {
       selected, basemap, following, search: search.value,

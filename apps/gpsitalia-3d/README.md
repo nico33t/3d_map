@@ -47,6 +47,17 @@ pubblicazione e il DNS richiedono una decisione esplicita.
   - conteggio delle soste;
   - nelle interruzioni di registrazione oltre 10 minuti il mezzo aspetta fermo, non viene inventato nessun tragitto.
 
+- **Moduli su attivazione** (fuori da ogni piano, spenti per tutti di base):
+  - si accendono con una variabile del progetto Pages, per ruolo o per singolo utente: `MODULO_VIDEO="role:creator"` oppure `MODULO_VIDEO="id:42, id:57"`. Voci malformate non abilitano nessuno;
+  - il controllo avviene sul server dal token verificato: `/api/session` risponde `modules: { video: true|false }` e il middleware risponde 404 ai file `/assets/modulo-video-*` per chi non è abilitato;
+  - su Cloudflare Pages una variabile cambiata vale dal deploy successivo: per accendere o spegnere serve ridistribuire.
+- **Modulo «video»:** nel timelapse compare «Esporta come video». Il codice si scarica solo al primo uso. Il video si registra nel browser in tempo reale dalla mappa:
+  - formati 16:9, 9:16 e 1:1 (1920 × 1080, 1080 × 1920, 1080 × 1080), durata 30 s, 1 o 2 min;
+  - inquadratura al seguito del mezzo o sul percorso intero;
+  - scritte facoltative (nome, orario e data, velocità, targa spenta di base), marchio GPS Italia e attribuzione Mapbox e OpenStreetMap sempre visibili;
+  - MP4 H.264 dove possibile, altrimenti WebM;
+  - la scheda deve restare in primo piano: se viene nascosta, o se si annulla o chiude, la registrazione si ferma senza file parziali; il rinnovo del token aspetta la fine della registrazione.
+
 ## Variabili d'ambiente
 
 Si impostano nel progetto Pages, oppure in `.dev.vars` in locale (ignorato da Git;
@@ -60,6 +71,7 @@ vedi `.dev.vars.example`). Nessuna chiave nel codice.
 | `APP_URL` | Default `https://app.gpsitalia.com`. |
 | `ALLOWED_ROLES` | Default `creator`. |
 | `MAPBOX_TOKEN` | Token pubblico Mapbox (`pk.`), limitato all'URL del sito. |
+| `MODULO_VIDEO` | Facoltativa. Chi ha il modulo video: `role:creator`, `id:42`, separati da virgole. Vuota o assente: nessuno. |
 
 ## Sviluppo
 

@@ -7,3 +7,5 @@ ALLOWED_ROLES=creator
 PLATFORM_API_URL=
 # Public Mapbox token (pk.), restricted to the site URL. Served by /api/config only after login.
 MAPBOX_TOKEN=
+# Optional modules, off for everyone when empty. Example: role:creator or id:42
+MODULO_VIDEO=

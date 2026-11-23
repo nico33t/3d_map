@@ -28,6 +28,10 @@ export default defineConfig({
   root: join(here, 'web'),
   publicDir: join(here, 'public'),
   envPrefix: [],
-  build: { outDir: join(here, 'dist'), emptyOutDir: true, chunkSizeWarningLimit: 2500 },
+  build: {
+    outDir: join(here, 'dist'), emptyOutDir: true, chunkSizeWarningLimit: 2500,
+    // Module bundles get a fixed prefix: the middleware serves them only to enabled users.
+    rollupOptions: { output: { chunkFileNames: chunk => chunk.name === 'modulo-video' ? 'assets/modulo-video-[hash].js' : 'assets/[name]-[hash].js' } },
+  },
   plugins: [vehicleModels()],
 });

@@ -24,7 +24,7 @@ Non contiene configurazioni personali o dati provenienti dai servizi collegati.
 - proxy di sola lettura verso le API della piattaforma con il token dell'utente;
 - `noindex` su tutte le risposte.
 
-Sono implementati anche la mappa live di tutti i mezzi visibili (mezzo scelto in 3D), il timelapse giornaliero del percorso e l'avviso di inattività. Dettagli in
+Sono implementati anche la mappa live di tutti i mezzi visibili (mezzo scelto in 3D), il timelapse giornaliero del percorso, l'avviso di inattività e il modulo su attivazione «video» (esportazione del timelapse come file MP4 o WebM). Dettagli in
 [apps/gpsitalia-3d/README.md](apps/gpsitalia-3d/README.md).
 
 ## Interfaccia e mappa
